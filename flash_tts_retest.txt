@@ -1,0 +1,3 @@
+--- RE-TESTING GEMINI FLASH TTS ---
+Testing models/gemini-2.5-flash-preview-tts...
+❌ ERROR: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent: [400 Bad Request] Model tried to generate text, but it should only be used for TTS. Make sure your instructions are clear to only generate audio from a given text transcript.

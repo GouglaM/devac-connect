@@ -1,0 +1,18 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Règle générale : Seuls les utilisateurs connectés (même anonymes) peuvent lire/écrire
+    // Cela empêche tout accès direct sans passer par l'application
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Règles spécifiques pour plus de finesse (Optionnel)
+    // match /announcements/{id} {
+    //   allow read: if true; // Public
+    //   allow write: if request.auth != null;
+    // }
+  }
+}
