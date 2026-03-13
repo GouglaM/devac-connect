@@ -166,6 +166,17 @@ export const INITIAL_UNITS: EvangelismUnit[] = [
       { id: 'o9', position: '9- Secrétaire à la prière Adjt', name: 'TAH BI TCHAN MICHAEL' },
       { id: 'o10', position: '10- Secrétaire à l\'encadrement des âmes', name: 'EDI YEPIE FAUSTIN' },
       { id: 'o11', position: '11- Secrétaire à l\'encadrement des âmes Adjt', name: 'Mme TOURE MARIE-LAURE' }
+    ],
+    programme: [
+      { id: "prog_1", date: "2026-03-14", activity: "AGAPE & FORMATION", location: "COUPLE DEDI", resources: "RAFRAICHISSEMENT", budget: "100000", assignedTo: "Mme TOURE Marie-Laure / Marcellin GOUGLA / Mme KRA Ange Joëlle / Mme DAGO Léa", assignedContact: "" },
+      { id: "prog_2", date: "2026-04-04", activity: "CORPS A CORPS", location: "PETITE OURS", resources: "RAFRAICHISSEMENT", budget: "10000", assignedTo: "GOUGLA Marcellin & OULOU Marie-Michelle", assignedContact: "" },
+      { id: "prog_3", date: "2026-04-25", activity: "CORPS A CORPS", location: "GRANDE OURS", resources: "RAFRAICHISSEMENT", budget: "10000", assignedTo: "KOUAME JEAN YVES & GNAGO Fédine", assignedContact: "" },
+      { id: "prog_4", date: "2026-05-16", activity: "EVANGELISATION PAR LE SPORT/MARACANA", location: "SOGEFIA", resources: "RAFRAICHISSEMENT + SONORISATION", budget: "200000", assignedTo: "TAH Bi Tchan Michaël & Mme KRA Ange Joëlle & ASSOUMAN Michel", assignedContact: "" },
+      { id: "prog_5", date: "2026-06-13", activity: "SUIVI DES AMES", location: "CHATEAU", resources: "RAFRAICHISSEMENT SANDWICH", budget: "30000", assignedTo: "EDI Faustin & Mme TOURE Marie-Laure", assignedContact: "" },
+      { id: "prog_6", date: "2026-07-11", activity: "CORPS-A-CORPS", location: "CIE", resources: "RAFRAICHISSEMENT", budget: "10000", assignedTo: "SANOUSSI MOUSSA & GOUGLA Marcellin", assignedContact: "" },
+      { id: "prog_7", date: "2026-09-19", activity: "SUIVI DES AMES", location: "CHATEAU", resources: "RAFRAICHISSEMENT", budget: "30000", assignedTo: "EDI Faustin & Mme TOURE Marie-Laure", assignedContact: "" },
+      { id: "prog_8", date: "2026-10-10", activity: "EVANGELISATION PAR LE SPORT", location: "GRANDE & OURS", resources: "RAFRAICHISSEMENT", budget: "200000", assignedTo: "TAH Bi Tchan Michaël & Mme DAGO Léa & ASSOUMAN Michel", assignedContact: "" },
+      { id: "prog_9", date: "TOUTE L'ANNEE", activity: "CAS SOCIAUX ET ACTIONS SOCIALES INTERNES", location: "INTERNES", resources: "", budget: "70000", assignedTo: "Mme TCHIMOU Béatrice, Mme KRA Ange Joëlle", assignedContact: "" }
     ]
   },
   {
