@@ -8,7 +8,8 @@ import {
     Volume2, Briefcase, Info, AlertCircle, Smile, TrendingUp, DollarSign,
     Wallet, PieChart, Activity, Sparkles, HeartCrack, PartyPopper, Mail, UserCheck, Clock,
     FileJson, FileCode, FileType, ArrowLeft, UserPlus, Filter, UserRoundCheck, Stethoscope,
-    TrendingDown, CheckCircle2, History, CreditCard, Receipt, Upload
+    TrendingDown, CheckCircle2, History, CreditCard, Receipt, Upload,
+    LayoutGrid, List, Zap, Target
 } from 'lucide-react';
 import { EvangelismUnit, Member, ProgrammeItem, ReportItem, OfficeMember, NewSoul, Committee, TreasuryItem, UnitFile, SocialActionRecord, FollowUpLog, Announcement, AnnualReportData, ContributionRecord } from '../types';
 import { db } from '../services/firebaseService';
@@ -68,6 +69,7 @@ const UnitDetails: React.FC<UnitDetailsProps> = ({ unit, onBack, onUpdate, isAdm
     const [reportType, setReportType] = useState<'MISSION' | 'GRID'>('MISSION');
     const [financeTab, setFinanceTab] = useState<'JOURNAL' | 'COTISATIONS'>('JOURNAL');
 
+    const [activityReportView, setActivityReportView] = useState<'GRID' | 'CARDS'>('CARDS');
     const [localLeader, setLocalLeader] = useState({ name: '', phone: '', email: '', photo: '' });
     const [localAssistant, setLocalAssistant] = useState({ name: '', phone: '', email: '', photo: '' });
 
@@ -1583,192 +1585,254 @@ const UnitDetails: React.FC<UnitDetailsProps> = ({ unit, onBack, onUpdate, isAdm
                             </div>
                         ) : (
                             <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden overflow-x-auto">
-                                <div className="p-8 border-b border-slate-100 bg-slate-50/50">
-                                    <h4 className="text-2xl font-black text-center uppercase tracking-[0.2em] text-slate-800">GRILLE DE RAPPORT D'ACTIVITÉ</h4>
+                                <div className="p-8 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row justify-between items-center gap-4">
+                                    <h4 className="text-2xl font-black text-center md:text-left uppercase tracking-[0.2em] text-slate-800">Rapport d'Activité</h4>
+                                    <div className="flex bg-slate-200/50 p-1 rounded-xl items-center">
+                                        <button
+                                            onClick={() => setActivityReportView('CARDS')}
+                                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activityReportView === 'CARDS' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                                        >
+                                            <LayoutGrid size={14} /> Cartes
+                                        </button>
+                                        <button
+                                            onClick={() => setActivityReportView('GRID')}
+                                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activityReportView === 'GRID' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                                        >
+                                            <List size={14} /> Grille
+                                        </button>
+                                    </div>
                                 </div>
-                                <table className="w-full text-left min-w-[1400px] border-collapse">
-                                    <thead>
-                                        <tr className="bg-slate-100 text-slate-600 text-[10px] font-black uppercase tracking-widest text-center">
-                                            <th rowSpan={2} className="px-4 py-6 border border-slate-200">DATES</th>
-                                            <th rowSpan={2} className="px-4 py-6 border border-slate-200">ACTIVITES</th>
-                                            <th rowSpan={2} className="px-4 py-6 border border-slate-200">
-                                                RESULTATS ATTENDUS<br />
-                                                <span className="text-rose-500 text-[8px] font-bold">(Objectif visé)</span>
-                                            </th>
-                                            <th rowSpan={2} className="px-4 py-6 border border-slate-200">
-                                                INDICATEURS<br />
-                                                <span className="text-rose-500 text-[8px] font-bold">(Fait observable qui prouve que l'activité est faite)</span>
-                                            </th>
-                                            <th rowSpan={2} className="px-4 py-6 border border-slate-200">
-                                                RESULTATS OBTENUS<br />
-                                                <span className="text-rose-500 text-[8px] font-bold">(Ce qui a été réellement fait)</span>
-                                            </th>
-                                            <th rowSpan={2} className="px-4 py-6 border border-slate-200">
-                                                PRODUIT<br />
-                                                <span className="text-rose-500 text-[8px] font-bold">(Nombre de personnes gagnées ou ayant entendu l'évangile)</span>
-                                            </th>
-                                            <th colSpan={2} className="px-4 py-3 border border-slate-200 uppercase">RESSOURCES</th>
-                                            <th rowSpan={2} className="px-4 py-6 border border-slate-200">OBSERVATIONS</th>
-                                            {isEditing && <th rowSpan={2} className="px-4 py-6 border border-slate-200"></th>}
-                                        </tr>
-                                        <tr className="bg-slate-100 text-slate-600 text-[9px] font-black uppercase tracking-widest text-center">
-                                            <th className="px-4 py-3 border border-slate-200">
-                                                HUMAINES<br />
-                                                <span className="text-rose-500 text-[8px] font-bold">(Nombre de participants à l'activité)</span>
-                                            </th>
-                                            <th className="px-4 py-3 border border-slate-200">
-                                                FINANCIERES<br />
-                                                <span className="text-rose-500 text-[8px] font-bold">(Coût réel)</span>
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-100 text-center uppercase text-[10px] font-bold">
-                                        {(isEditing ? localActivityReports : (unit.activityReports || [])).map((r: any) => (
-                                            <tr key={r.id} className="hover:bg-slate-50 transition-colors">
-                                                <td className="px-4 py-4 border border-slate-100 min-w-[120px]">
-                                                    {isEditing ? <input value={r.date} type="date" onChange={e => setLocalActivityReports(prev => prev.map(i => i.id === r.id ? { ...i, date: e.target.value } : i))} className="w-full bg-slate-50 p-2 rounded text-[9px]" /> : r.date}
-                                                </td>
-                                                <td className="px-4 py-4 border border-slate-100 min-w-[200px]">
-                                                    {isEditing ? <textarea value={r.activity} onChange={e => setLocalActivityReports(prev => prev.map(i => i.id === r.id ? { ...i, activity: e.target.value } : i))} className="w-full bg-slate-50 p-2 rounded text-[9px] normal-case" rows={2} /> : <p className="normal-case text-left">{r.activity}</p>}
-                                                </td>
-                                                <td className="px-4 py-4 border border-slate-100 min-w-[180px]">
-                                                    {isEditing ? <textarea value={r.expectedResults} onChange={e => setLocalActivityReports(prev => prev.map(i => i.id === r.id ? { ...i, expectedResults: e.target.value } : i))} className="w-full bg-slate-50 p-2 rounded text-[9px] normal-case" rows={2} /> : <p className="normal-case text-left">{r.expectedResults}</p>}
-                                                </td>
-                                                <td className="px-4 py-4 border border-slate-100 min-w-[180px]">
-                                                    {isEditing ? <textarea value={r.indicators} onChange={e => setLocalActivityReports(prev => prev.map(i => i.id === r.id ? { ...i, indicators: e.target.value } : i))} className="w-full bg-slate-50 p-2 rounded text-[9px] normal-case" rows={2} /> : <p className="normal-case text-left">{r.indicators}</p>}
-                                                </td>
-                                                <td className="px-4 py-4 border border-slate-100 min-w-[180px]">
-                                                    {isEditing ? <textarea value={r.obtainedResults} onChange={e => setLocalActivityReports(prev => prev.map(i => i.id === r.id ? { ...i, obtainedResults: e.target.value } : i))} className="w-full bg-slate-50 p-2 rounded text-[9px] normal-case" rows={2} /> : <p className="normal-case text-left">{r.obtainedResults}</p>}
-                                                </td>
-                                                <td className="px-4 py-4 border border-slate-100 min-w-[120px]">
-                                                    {isEditing ? <input value={r.product} type="number" onChange={e => setLocalActivityReports(prev => prev.map(i => i.id === r.id ? { ...i, product: e.target.value } : i))} className="w-full bg-slate-50 p-2 rounded text-center" /> : r.product}
-                                                </td>
-                                                <td className="px-4 py-4 border border-slate-100 min-w-[100px]">
-                                                    {isEditing ? <input value={r.humanResources} type="number" onChange={e => setLocalActivityReports(prev => prev.map(i => i.id === r.id ? { ...i, humanResources: e.target.value } : i))} className="w-full bg-slate-50 p-2 rounded text-center" /> : r.humanResources}
-                                                </td>
-                                                <td className="px-4 py-4 border border-slate-100 min-w-[120px]">
-                                                    {isEditing ? <input value={r.financialResources} type="number" onChange={e => setLocalActivityReports(prev => prev.map(i => i.id === r.id ? { ...i, financialResources: e.target.value } : i))} className="w-full bg-slate-50 p-2 rounded text-center" /> : (parseInt(r.financialResources || '0')).toLocaleString()}
-                                                </td>
-                                                <td className="px-4 py-4 border border-slate-100 min-w-[200px]">
-                                                    {isEditing ? <textarea value={r.observations} onChange={e => setLocalActivityReports(prev => prev.map(i => i.id === r.id ? { ...i, observations: e.target.value } : i))} className="w-full bg-slate-50 p-2 rounded text-[9px] normal-case" rows={2} /> : <p className="normal-case text-left">{r.observations}</p>}
-                                                </td>
-                                                {isEditing && <td className="px-4 py-4 border border-slate-100"><button onClick={() => removeItem('ACTIVITY_GRID', r.id)} className="text-slate-200 hover:text-red-500"><Trash2 size={18} /></button></td>}
-                                            </tr>
+
+                                {activityReportView === 'CARDS' && !isEditing ? (
+                                    <div className="p-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 bg-slate-50/30">
+                                        {(unit.activityReports || []).map((r: any) => (
+                                            <div key={r.id} className="bg-white rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col group">
+                                                <div className="p-6 border-b border-slate-50 bg-gradient-to-r from-slate-50 to-white flex justify-between items-start">
+                                                    <div>
+                                                        <div className="flex items-center gap-2 text-indigo-600 mb-1">
+                                                            <Calendar size={14} />
+                                                            <span className="text-[10px] font-black uppercase tracking-widest">{r.date}</span>
+                                                        </div>
+                                                        <h5 className="text-sm font-black text-slate-800 line-clamp-2 leading-tight">{r.activity}</h5>
+                                                    </div>
+                                                </div>
+                                                <div className="p-6 space-y-4 flex-1">
+                                                    <div className="space-y-1">
+                                                        <span className="text-[9px] font-black uppercase tracking-widest text-rose-500 flex items-center gap-1.5 align-middle">
+                                                            <Target size={10} /> Objectif Visé
+                                                        </span>
+                                                        <p className="text-[11px] text-slate-600 leading-relaxed font-medium">{r.expectedResults}</p>
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <span className="text-[9px] font-black uppercase tracking-widest text-indigo-500 flex items-center gap-1.5">
+                                                            <Zap size={10} /> Indicateurs
+                                                        </span>
+                                                        <p className="text-[11px] text-slate-600 leading-relaxed font-medium">{r.indicators}</p>
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500 flex items-center gap-1.5">
+                                                            <CheckCircle2 size={10} /> Résultats Obtenus
+                                                        </span>
+                                                        <p className="text-[11px] text-slate-600 leading-relaxed font-medium">{r.obtainedResults}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="px-6 py-4 bg-slate-50/50 border-t border-slate-50 grid grid-cols-3 gap-2">
+                                                    <div className="text-center">
+                                                        <span className="block text-[8px] font-black uppercase text-slate-400 tracking-tighter mb-0.5">Produit</span>
+                                                        <span className="text-xs font-black text-slate-700">{r.product || '0'}</span>
+                                                    </div>
+                                                    <div className="text-center border-x border-slate-200/50">
+                                                        <span className="block text-[8px] font-black uppercase text-slate-400 tracking-tighter mb-0.5">Humaines</span>
+                                                        <span className="text-xs font-black text-slate-700">{r.humanResources || '0'}</span>
+                                                    </div>
+                                                    <div className="text-center">
+                                                        <span className="block text-[8px] font-black uppercase text-slate-400 tracking-tighter mb-0.5">Budget</span>
+                                                        <span className="text-xs font-black text-indigo-600">{(parseInt(r.financialResources || '0')).toLocaleString()}</span>
+                                                    </div>
+                                                </div>
+                                                {r.observations && (
+                                                    <div className="px-6 py-4 bg-amber-50/30 border-t border-amber-100/30 italic text-[10px] text-slate-500 font-medium">
+                                                        <span className="font-black normal-case not-italic uppercase text-slate-400 text-[8px] mr-1">Obs :</span> "{r.observations}"
+                                                    </div>
+                                                )}
+                                            </div>
                                         ))}
-                                    </tbody>
-                                </table>
+                                        {(unit.activityReports || []).length === 0 && (
+                                            <div className="col-span-full py-20 text-center space-y-4">
+                                                <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto text-slate-400">
+                                                    <FileText size={32} />
+                                                </div>
+                                                <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Aucun rapport d'activité enregistré</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-left min-w-[1400px] border-collapse">
+                                            <thead>
+                                                <tr className="bg-slate-50 text-slate-500 text-[10px] font-black uppercase tracking-widest text-center">
+                                                    <th rowSpan={2} className="px-5 py-6 border-b border-slate-100">DATES</th>
+                                                    <th rowSpan={2} className="px-5 py-6 border-b border-slate-100">ACTIVITES</th>
+                                                    <th rowSpan={2} className="px-5 py-6 border-b border-slate-100">OBJECTIFS VISÉS</th>
+                                                    <th rowSpan={2} className="px-5 py-6 border-b border-slate-100">INDICATEURS</th>
+                                                    <th rowSpan={2} className="px-5 py-6 border-b border-slate-100">RÉSULTATS REELS</th>
+                                                    <th rowSpan={2} className="px-5 py-6 border-b border-slate-100">PRODUIT</th>
+                                                    <th colSpan={2} className="px-5 py-4 border-b border-slate-100 bg-slate-100/30">RESSOURCES</th>
+                                                    <th rowSpan={2} className="px-5 py-6 border-b border-slate-100">OBSERVATIONS</th>
+                                                    {isEditing && <th rowSpan={2} className="px-5 py-6 border-b border-slate-100"></th>}
+                                                </tr>
+                                                <tr className="bg-slate-50 text-slate-500 text-[9px] font-black uppercase tracking-widest text-center">
+                                                    <th className="px-5 py-3 border-b border-slate-100 border-l border-slate-100">HUMAINES</th>
+                                                    <th className="px-5 py-3 border-b border-slate-100">FINANCIERES</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-100 text-center text-[11px] font-medium text-slate-700">
+                                                {(isEditing ? localActivityReports : (unit.activityReports || [])).map((r: any) => (
+                                                    <tr key={r.id} className="hover:bg-indigo-50/30 transition-colors">
+                                                        <td className="px-4 py-5 font-black text-indigo-600 whitespace-nowrap">
+                                                            {isEditing ? <input value={r.date} type="date" onChange={e => setLocalActivityReports(prev => prev.map(i => i.id === r.id ? { ...i, date: e.target.value } : i))} className="w-full bg-white border border-slate-200 p-2 rounded-lg text-[10px]" /> : r.date}
+                                                        </td>
+                                                        <td className="px-4 py-5 font-black text-slate-800 text-left min-w-[200px]">
+                                                            {isEditing ? <textarea value={r.activity} onChange={e => setLocalActivityReports(prev => prev.map(i => i.id === r.id ? { ...i, activity: e.target.value } : i))} className="w-full bg-white border border-slate-200 p-2 rounded-lg text-[10px]" rows={2} /> : r.activity}
+                                                        </td>
+                                                        <td className="px-4 py-5 text-left leading-relaxed min-w-[200px] text-slate-500">
+                                                            {isEditing ? <textarea value={r.expectedResults} onChange={e => setLocalActivityReports(prev => prev.map(i => i.id === r.id ? { ...i, expectedResults: e.target.value } : i))} className="w-full bg-white border border-slate-200 p-2 rounded-lg text-[10px]" rows={2} /> : r.expectedResults}
+                                                        </td>
+                                                        <td className="px-4 py-5 text-left leading-relaxed min-w-[200px] text-slate-500">
+                                                            {isEditing ? <textarea value={r.indicators} onChange={e => setLocalActivityReports(prev => prev.map(i => i.id === r.id ? { ...i, indicators: e.target.value } : i))} className="w-full bg-white border border-slate-200 p-2 rounded-lg text-[10px]" rows={2} /> : r.indicators}
+                                                        </td>
+                                                        <td className="px-4 py-5 text-left leading-relaxed min-w-[200px] text-slate-500 border-r border-slate-50">
+                                                            {isEditing ? <textarea value={r.obtainedResults} onChange={e => setLocalActivityReports(prev => prev.map(i => i.id === r.id ? { ...i, obtainedResults: e.target.value } : i))} className="w-full bg-white border border-slate-200 p-2 rounded-lg text-[10px]" rows={2} /> : r.obtainedResults}
+                                                        </td>
+                                                        <td className="px-4 py-5 font-black text-slate-800">
+                                                            {isEditing ? <input value={r.product} type="number" onChange={e => setLocalActivityReports(prev => prev.map(i => i.id === r.id ? { ...i, product: e.target.value } : i))} className="w-full bg-white border border-slate-200 p-2 rounded-lg text-center" /> : r.product}
+                                                        </td>
+                                                        <td className="px-4 py-5 font-black text-slate-800 bg-slate-50/30">
+                                                            {isEditing ? <input value={r.humanResources} type="number" onChange={e => setLocalActivityReports(prev => prev.map(i => i.id === r.id ? { ...i, humanResources: e.target.value } : i))} className="w-full bg-white border border-slate-200 p-2 rounded-lg text-center" /> : r.humanResources}
+                                                        </td>
+                                                        <td className="px-4 py-5 font-black text-indigo-600 bg-slate-50/30">
+                                                            {isEditing ? <input value={r.financialResources} type="number" onChange={e => setLocalActivityReports(prev => prev.map(i => i.id === r.id ? { ...i, financialResources: e.target.value } : i))} className="w-full bg-white border border-slate-200 p-2 rounded-lg text-center" /> : (parseInt(r.financialResources || '0')).toLocaleString()}
+                                                        </td>
+                                                        <td className="px-4 py-5 text-left italic text-slate-400 min-w-[200px]">
+                                                            {isEditing ? <textarea value={r.observations} onChange={e => setLocalActivityReports(prev => prev.map(i => i.id === r.id ? { ...i, observations: e.target.value } : i))} className="w-full bg-white border border-slate-200 p-2 rounded-lg text-[10px]" rows={2} /> : r.observations}
+                                                        </td>
+                                                        {isEditing && <td className="px-4 py-5"><button onClick={() => removeItem('ACTIVITY_GRID', r.id)} className="text-slate-300 hover:text-red-500 transition-colors"><Trash2 size={18} /></button></td>}
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
                 )}
 
-            </div>
+                {/* SECTION BILAN ANNUEL */}
+                {activeSubTab === 'BILAN' && localAnnualReportData && (
+                    <div className="container mx-auto p-6 md:p-10 max-w-7xl space-y-8 animate-in fade-in">
+                        <div className="bg-white p-8 md:p-12 rounded-[3rem] shadow-xl border border-slate-100 relative overflow-hidden">
+                            <div className="absolute top-0 left-0 w-2 h-full bg-gradient-to-b from-indigo-500 to-purple-500"></div>
 
-            {/* SECTION BILAN ANNUEL */}
-            {activeSubTab === 'BILAN' && localAnnualReportData && (
-                <div className="container mx-auto p-6 md:p-10 max-w-7xl space-y-8 animate-in fade-in">
-                    <div className="bg-white p-8 md:p-12 rounded-[3rem] shadow-xl border border-slate-100 relative overflow-hidden">
-                        <div className="absolute top-0 left-0 w-2 h-full bg-gradient-to-b from-indigo-500 to-purple-500"></div>
-
-                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10 pb-8 border-b-2 border-slate-50">
-                            <div>
-                                <h3 className="text-3xl font-black uppercase tracking-tight text-slate-800 flex items-center gap-4">
-                                    <div className="p-3 bg-indigo-50 rounded-2xl text-indigo-600">
-                                        <FileText size={28} />
-                                    </div>
-                                    Génération du Bilan Annuel
-                                </h3>
-                                <p className="text-slate-500 mt-2 font-medium max-w-2xl text-sm">Complétez les sections ci-dessous pour générer le rapport annuel complet. Les tableaux de trésorerie, d'âmes et d'activités seront automatiquement inclus dans l'export.</p>
+                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10 pb-8 border-b-2 border-slate-50">
+                                <div>
+                                    <h3 className="text-3xl font-black uppercase tracking-tight text-slate-800 flex items-center gap-4">
+                                        <div className="p-3 bg-indigo-50 rounded-2xl text-indigo-600">
+                                            <FileText size={28} />
+                                        </div>
+                                        Génération du Bilan Annuel
+                                    </h3>
+                                    <p className="text-slate-500 mt-2 font-medium max-w-2xl text-sm">Complétez les sections ci-dessous pour générer le rapport annuel complet. Les tableaux de trésorerie, d'âmes et d'activités seront automatiquement inclus dans l'export.</p>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                                    <button onClick={() => exportData('DOCX', [], [], `Bilan_Annuel_${new Date().getFullYear()}_${unit.name.substring(0, 10)}`, 'BILAN ANNUEL', undefined, { unitName: unit.name, year: new Date().getFullYear().toString(), bilanData: localAnnualReportData, stats, leaderName: localLeader.name })} className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg shadow-blue-500/30 transition-all active:scale-95">
+                                        <FileText size={18} /> Word
+                                    </button>
+                                    <button onClick={() => window.alert('Export PDF en cours de développement...')} className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-4 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg shadow-red-500/30 transition-all active:scale-95">
+                                        <Download size={18} /> PDF
+                                    </button>
+                                    <button onClick={() => window.alert('Export PPTX en cours de développement...')} className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-4 bg-orange-600 hover:bg-orange-700 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg shadow-orange-500/30 transition-all active:scale-95">
+                                        <Download size={18} /> PPTX
+                                    </button>
+                                </div>
                             </div>
-                            <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-                                <button onClick={() => exportData('DOCX', [], [], `Bilan_Annuel_${new Date().getFullYear()}_${unit.name.substring(0, 10)}`, 'BILAN ANNUEL', undefined, { unitName: unit.name, year: new Date().getFullYear().toString(), bilanData: localAnnualReportData, stats, leaderName: localLeader.name })} className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg shadow-blue-500/30 transition-all active:scale-95">
-                                    <FileText size={18} /> Word
-                                </button>
-                                <button onClick={() => window.alert('Export PDF en cours de développement...')} className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-4 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg shadow-red-500/30 transition-all active:scale-95">
-                                    <Download size={18} /> PDF
-                                </button>
-                                <button onClick={() => window.alert('Export PPTX en cours de développement...')} className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-4 bg-orange-600 hover:bg-orange-700 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg shadow-orange-500/30 transition-all active:scale-95">
-                                    <Download size={18} /> PPTX
-                                </button>
-                            </div>
-                        </div>
 
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-10">
-                            {/* Introduction & Objectifs */}
-                            <div className="space-y-6">
-                                <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 space-y-5 shadow-inner">
-                                    <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-indigo-500"></div> 1. Introduction & Objectifs</h4>
-                                    <div>
-                                        <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Introduction</label>
-                                        <textarea disabled={!isEditing} value={localAnnualReportData.introduction} onChange={e => setLocalAnnualReportData({ ...localAnnualReportData, introduction: e.target.value })} className="w-full h-24 p-4 bg-white border border-slate-200 rounded-xl text-sm font-medium resize-none focus:ring-2 focus:ring-indigo-500/20 disabled:bg-slate-50 disabled:text-slate-500" placeholder="Rédigez l'introduction du bilan..."></textarea>
-                                    </div>
-                                    <div>
-                                        <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Champ Missionnaire</label>
-                                        <input disabled={!isEditing} value={localAnnualReportData.missionField} onChange={e => setLocalAnnualReportData({ ...localAnnualReportData, missionField: e.target.value })} className="w-full p-4 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 disabled:bg-slate-50 disabled:text-slate-500" placeholder="Ex: Riviéra Palmeraie..." />
-                                    </div>
-                                    <div>
-                                        <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Période d'activités</label>
-                                        <input disabled={!isEditing} value={localAnnualReportData.period || ''} onChange={e => setLocalAnnualReportData({ ...localAnnualReportData, period: e.target.value })} className="w-full p-4 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 disabled:bg-slate-50 disabled:text-slate-500" placeholder="Ex: DU 07 MARS AU 10 OCTOBRE..." />
-                                    </div>
-                                    <div>
-                                        <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Objectif Général</label>
-                                        <textarea disabled={!isEditing} value={localAnnualReportData.generalObjective} onChange={e => setLocalAnnualReportData({ ...localAnnualReportData, generalObjective: e.target.value })} className="w-full h-20 p-4 bg-white border border-slate-200 rounded-xl text-sm font-medium resize-none focus:ring-2 focus:ring-indigo-500/20 disabled:bg-slate-50 disabled:text-slate-500" placeholder="Évangéliser et implanter une église..."></textarea>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-10">
+                                {/* Introduction & Objectifs */}
+                                <div className="space-y-6">
+                                    <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 space-y-5 shadow-inner">
+                                        <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-indigo-500"></div> 1. Introduction & Objectifs</h4>
                                         <div>
-                                            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Population à atteindre</label>
-                                            <input disabled={!isEditing} type="text" value={localAnnualReportData.specificObjectivePopulation} onChange={e => setLocalAnnualReportData({ ...localAnnualReportData, specificObjectivePopulation: e.target.value })} className="w-full p-4 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 disabled:bg-slate-50 disabled:text-slate-500" placeholder="Ex: 500 personnes" />
+                                            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Introduction</label>
+                                            <textarea disabled={!isEditing} value={localAnnualReportData.introduction} onChange={e => setLocalAnnualReportData({ ...localAnnualReportData, introduction: e.target.value })} className="w-full h-24 p-4 bg-white border border-slate-200 rounded-xl text-sm font-medium resize-none focus:ring-2 focus:ring-indigo-500/20 disabled:bg-slate-50 disabled:text-slate-500" placeholder="Rédigez l'introduction du bilan..."></textarea>
                                         </div>
                                         <div>
-                                            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Budget Prévu (FCFA)</label>
-                                            <input disabled={!isEditing} type="text" value={localAnnualReportData.specificObjectiveBudget} onChange={e => setLocalAnnualReportData({ ...localAnnualReportData, specificObjectiveBudget: e.target.value })} className="w-full p-4 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 disabled:bg-slate-50 disabled:text-slate-500" placeholder="Ex: 1 500 000 FCFA" />
+                                            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Champ Missionnaire</label>
+                                            <input disabled={!isEditing} value={localAnnualReportData.missionField} onChange={e => setLocalAnnualReportData({ ...localAnnualReportData, missionField: e.target.value })} className="w-full p-4 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 disabled:bg-slate-50 disabled:text-slate-500" placeholder="Ex: Riviéra Palmeraie..." />
+                                        </div>
+                                        <div>
+                                            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Période d'activités</label>
+                                            <input disabled={!isEditing} value={localAnnualReportData.period || ''} onChange={e => setLocalAnnualReportData({ ...localAnnualReportData, period: e.target.value })} className="w-full p-4 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 disabled:bg-slate-50 disabled:text-slate-500" placeholder="Ex: DU 07 MARS AU 10 OCTOBRE..." />
+                                        </div>
+                                        <div>
+                                            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Objectif Général</label>
+                                            <textarea disabled={!isEditing} value={localAnnualReportData.generalObjective} onChange={e => setLocalAnnualReportData({ ...localAnnualReportData, generalObjective: e.target.value })} className="w-full h-20 p-4 bg-white border border-slate-200 rounded-xl text-sm font-medium resize-none focus:ring-2 focus:ring-indigo-500/20 disabled:bg-slate-50 disabled:text-slate-500" placeholder="Évangéliser et implanter une église..."></textarea>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Population à atteindre</label>
+                                                <input disabled={!isEditing} type="text" value={localAnnualReportData.specificObjectivePopulation} onChange={e => setLocalAnnualReportData({ ...localAnnualReportData, specificObjectivePopulation: e.target.value })} className="w-full p-4 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 disabled:bg-slate-50 disabled:text-slate-500" placeholder="Ex: 500 personnes" />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Budget Prévu (FCFA)</label>
+                                                <input disabled={!isEditing} type="text" value={localAnnualReportData.specificObjectiveBudget} onChange={e => setLocalAnnualReportData({ ...localAnnualReportData, specificObjectiveBudget: e.target.value })} className="w-full p-4 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 disabled:bg-slate-50 disabled:text-slate-500" placeholder="Ex: 1 500 000 FCFA" />
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
 
-                                <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 space-y-5 shadow-inner">
-                                    <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-emerald-500"></div> 2. Bilan Moral & Spirituel</h4>
-                                    <textarea disabled={!isEditing} value={localAnnualReportData.moralSpiritualBilan} onChange={e => setLocalAnnualReportData({ ...localAnnualReportData, moralSpiritualBilan: e.target.value })} className="w-full h-32 p-4 bg-white border border-slate-200 rounded-xl text-sm font-medium resize-none focus:ring-2 focus:ring-emerald-500/20 disabled:bg-slate-50 disabled:text-slate-500" placeholder="Analyse de la santé spirituelle de l'unité, engagement des membres..."></textarea>
-                                </div>
-                            </div>
-
-                            {/* Analyse Interne & Conclusion */}
-                            <div className="space-y-6">
-                                <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 space-y-5 shadow-inner">
-                                    <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-orange-500"></div> 3. Analyse Interne</h4>
-                                    <div>
-                                        <label className="block text-[10px] font-black uppercase tracking-widest text-emerald-600 mb-2">Points Forts</label>
-                                        <textarea disabled={!isEditing} value={localAnnualReportData.internalAnalysisStrengths} onChange={e => setLocalAnnualReportData({ ...localAnnualReportData, internalAnalysisStrengths: e.target.value })} className="w-full h-24 p-4 bg-emerald-50/30 border border-emerald-100 rounded-xl text-sm font-medium resize-none focus:ring-2 focus:ring-emerald-500/20 disabled:bg-slate-50 disabled:text-slate-500" placeholder="- Forte mobilisation...\n- Respect du programme..."></textarea>
-                                    </div>
-                                    <div>
-                                        <label className="block text-[10px] font-black uppercase tracking-widest text-rose-600 mb-2">Points Faibles</label>
-                                        <textarea disabled={!isEditing} value={localAnnualReportData.internalAnalysisWeaknesses} onChange={e => setLocalAnnualReportData({ ...localAnnualReportData, internalAnalysisWeaknesses: e.target.value })} className="w-full h-24 p-4 bg-rose-50/30 border border-rose-100 rounded-xl text-sm font-medium resize-none focus:ring-2 focus:ring-rose-500/20 disabled:bg-slate-50 disabled:text-slate-500" placeholder="- Manque de suivi post-campagne...\n- Retards occasionnels..."></textarea>
-                                    </div>
-                                    <div>
-                                        <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Propositions / Recommandations</label>
-                                        <textarea disabled={!isEditing} value={localAnnualReportData.recommendations} onChange={e => setLocalAnnualReportData({ ...localAnnualReportData, recommendations: e.target.value })} className="w-full h-24 p-4 bg-white border border-slate-200 rounded-xl text-sm font-medium resize-none focus:ring-2 focus:ring-indigo-500/20 disabled:bg-slate-50 disabled:text-slate-500" placeholder="Que suggérez-vous pour améliorer..."></textarea>
+                                    <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 space-y-5 shadow-inner">
+                                        <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-emerald-500"></div> 2. Bilan Moral & Spirituel</h4>
+                                        <textarea disabled={!isEditing} value={localAnnualReportData.moralSpiritualBilan} onChange={e => setLocalAnnualReportData({ ...localAnnualReportData, moralSpiritualBilan: e.target.value })} className="w-full h-32 p-4 bg-white border border-slate-200 rounded-xl text-sm font-medium resize-none focus:ring-2 focus:ring-emerald-500/20 disabled:bg-slate-50 disabled:text-slate-500" placeholder="Analyse de la santé spirituelle de l'unité, engagement des membres..."></textarea>
                                     </div>
                                 </div>
 
-                                <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 space-y-5 shadow-inner">
-                                    <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-purple-500"></div> 4. Perspectives & Conclusion</h4>
-                                    <div>
-                                        <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Perspectives</label>
-                                        <textarea disabled={!isEditing} value={localAnnualReportData.perspectives} onChange={e => setLocalAnnualReportData({ ...localAnnualReportData, perspectives: e.target.value })} className="w-full h-24 p-4 bg-white border border-slate-200 rounded-xl text-sm font-medium resize-none focus:ring-2 focus:ring-purple-500/20 disabled:bg-slate-50 disabled:text-slate-500" placeholder="Quels sont les axes d'intervention pour l'année prochaine ?"></textarea>
+                                {/* Analyse Interne & Conclusion */}
+                                <div className="space-y-6">
+                                    <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 space-y-5 shadow-inner">
+                                        <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-orange-500"></div> 3. Analyse Interne</h4>
+                                        <div>
+                                            <label className="block text-[10px] font-black uppercase tracking-widest text-emerald-600 mb-2">Points Forts</label>
+                                            <textarea disabled={!isEditing} value={localAnnualReportData.internalAnalysisStrengths} onChange={e => setLocalAnnualReportData({ ...localAnnualReportData, internalAnalysisStrengths: e.target.value })} className="w-full h-24 p-4 bg-emerald-50/30 border border-emerald-100 rounded-xl text-sm font-medium resize-none focus:ring-2 focus:ring-emerald-500/20 disabled:bg-slate-50 disabled:text-slate-500" placeholder="- Forte mobilisation...\n- Respect du programme..."></textarea>
+                                        </div>
+                                        <div>
+                                            <label className="block text-[10px] font-black uppercase tracking-widest text-rose-600 mb-2">Points Faibles</label>
+                                            <textarea disabled={!isEditing} value={localAnnualReportData.internalAnalysisWeaknesses} onChange={e => setLocalAnnualReportData({ ...localAnnualReportData, internalAnalysisWeaknesses: e.target.value })} className="w-full h-24 p-4 bg-rose-50/30 border border-rose-100 rounded-xl text-sm font-medium resize-none focus:ring-2 focus:ring-rose-500/20 disabled:bg-slate-50 disabled:text-slate-500" placeholder="- Manque de suivi post-campagne...\n- Retards occasionnels..."></textarea>
+                                        </div>
+                                        <div>
+                                            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Propositions / Recommandations</label>
+                                            <textarea disabled={!isEditing} value={localAnnualReportData.recommendations} onChange={e => setLocalAnnualReportData({ ...localAnnualReportData, recommendations: e.target.value })} className="w-full h-24 p-4 bg-white border border-slate-200 rounded-xl text-sm font-medium resize-none focus:ring-2 focus:ring-indigo-500/20 disabled:bg-slate-50 disabled:text-slate-500" placeholder="Que suggérez-vous pour améliorer..."></textarea>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Conclusion</label>
-                                        <textarea disabled={!isEditing} value={localAnnualReportData.conclusion} onChange={e => setLocalAnnualReportData({ ...localAnnualReportData, conclusion: e.target.value })} className="w-full h-20 p-4 bg-white border border-slate-200 rounded-xl text-sm font-medium resize-none focus:ring-2 focus:ring-purple-500/20 disabled:bg-slate-50 disabled:text-slate-500" placeholder="Mot de fin..."></textarea>
+
+                                    <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 space-y-5 shadow-inner">
+                                        <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-purple-500"></div> 4. Perspectives & Conclusion</h4>
+                                        <div>
+                                            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Perspectives</label>
+                                            <textarea disabled={!isEditing} value={localAnnualReportData.perspectives} onChange={e => setLocalAnnualReportData({ ...localAnnualReportData, perspectives: e.target.value })} className="w-full h-24 p-4 bg-white border border-slate-200 rounded-xl text-sm font-medium resize-none focus:ring-2 focus:ring-purple-500/20 disabled:bg-slate-50 disabled:text-slate-500" placeholder="Quels sont les axes d'intervention pour l'année prochaine ?"></textarea>
+                                        </div>
+                                        <div>
+                                            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Conclusion</label>
+                                            <textarea disabled={!isEditing} value={localAnnualReportData.conclusion} onChange={e => setLocalAnnualReportData({ ...localAnnualReportData, conclusion: e.target.value })} className="w-full h-20 p-4 bg-white border border-slate-200 rounded-xl text-sm font-medium resize-none focus:ring-2 focus:ring-purple-500/20 disabled:bg-slate-50 disabled:text-slate-500" placeholder="Mot de fin..."></textarea>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
-            {/* END SECTION BILAN ANNUEL */}
+                )}
+                {/* END SECTION BILAN ANNUEL */}
 
-            <style>{`
+                <style>{`
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .custom-scrollbar::-webkit-scrollbar { width: 8px; }
@@ -1790,17 +1854,18 @@ const UnitDetails: React.FC<UnitDetailsProps> = ({ unit, onBack, onUpdate, isAdm
             .animate-in { animation: none !important; }
         }
       `}</style>
-            {/* Member Form Modal */}
-            <MemberFormModal
-                isOpen={isMemberModalOpen}
-                onClose={() => {
-                    setIsMemberModalOpen(false);
-                    setEditingMember(null);
-                }}
-                onSave={handleSaveMember}
-                initialData={editingMember}
-                title={`Nouveau Membre - ${unit.name}`}
-            />
+                {/* Member Form Modal */}
+                <MemberFormModal
+                    isOpen={isMemberModalOpen}
+                    onClose={() => {
+                        setIsMemberModalOpen(false);
+                        setEditingMember(null);
+                    }}
+                    onSave={handleSaveMember}
+                    initialData={editingMember}
+                    title={`Nouveau Membre - ${unit.name}`}
+                />
+            </div>
         </div>
     );
 };
