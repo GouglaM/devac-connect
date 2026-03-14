@@ -19,6 +19,7 @@ import { MemberImportButton } from './MemberImportButton';
 import { ProgramImportButton } from './ProgramImportButton';
 import { generateId } from '../constants';
 import { exportData } from '../services/exportUtils';
+import RichTextEditor from './RichTextEditor';
 
 interface UnitDetailsProps {
     unit: EvangelismUnit | Committee;
@@ -1417,10 +1418,10 @@ const UnitDetails: React.FC<UnitDetailsProps> = ({ unit, onBack, onUpdate, isAdm
                                                         {isEditing ? <input value={r.missionField} onChange={e => setLocalReports(prev => prev.map(i => i.id === r.id ? { ...i, missionField: e.target.value } : i))} className="w-full bg-slate-50 p-2 rounded text-[10px]" /> : r.missionField}
                                                     </td>
                                                     <td className="px-4 py-4 border-r border-slate-100 text-slate-500 whitespace-pre-wrap text-left text-[9px]">
-                                                        {isEditing ? <textarea value={r.projectedActivities} onChange={e => setLocalReports(prev => prev.map(i => i.id === r.id ? { ...i, projectedActivities: e.target.value } : i))} className="w-full bg-slate-50 p-2 rounded text-[9px]" rows={3} /> : r.projectedActivities}
+                                                        {isEditing ? <RichTextEditor value={r.projectedActivities} onChange={content => setLocalReports(prev => prev.map(i => i.id === r.id ? { ...i, projectedActivities: content } : i))} className="min-w-[200px]" /> : <div dangerouslySetInnerHTML={{ __html: r.projectedActivities }} />}
                                                     </td>
                                                     <td className="px-4 py-4 border-r border-slate-100 text-slate-500 whitespace-pre-wrap text-left text-[9px]">
-                                                        {isEditing ? <textarea value={r.realizedActivities} onChange={e => setLocalReports(prev => prev.map(i => i.id === r.id ? { ...i, realizedActivities: e.target.value } : i))} className="w-full bg-slate-50 p-2 rounded text-[9px]" rows={3} /> : r.realizedActivities}
+                                                        {isEditing ? <RichTextEditor value={r.realizedActivities} onChange={content => setLocalReports(prev => prev.map(i => i.id === r.id ? { ...i, realizedActivities: content } : i))} className="min-w-[200px]" /> : <div dangerouslySetInnerHTML={{ __html: r.realizedActivities }} />}
                                                     </td>
                                                     <td className="px-4 py-4 border-r border-slate-100 text-slate-800 tabular-nums font-black">
                                                         {isEditing ? <input value={r.expectedAudience} type="number" onChange={e => setLocalReports(prev => prev.map(i => i.id === r.id ? { ...i, expectedAudience: e.target.value } : i))} className="w-16 bg-slate-50 p-2 rounded text-center" /> : expAudience.toLocaleString()}
@@ -1621,19 +1622,19 @@ const UnitDetails: React.FC<UnitDetailsProps> = ({ unit, onBack, onUpdate, isAdm
                                                         <span className="text-[9px] font-black uppercase tracking-widest text-rose-500 flex items-center gap-1.5 align-middle">
                                                             <Target size={10} /> Objectif Visé
                                                         </span>
-                                                        <p className="text-[11px] text-slate-600 leading-relaxed font-medium">{r.expectedResults}</p>
+                                                        <div className="text-[11px] text-slate-600 leading-relaxed font-medium quill-content" dangerouslySetInnerHTML={{ __html: r.expectedResults }}></div>
                                                     </div>
                                                     <div className="space-y-1">
                                                         <span className="text-[9px] font-black uppercase tracking-widest text-indigo-500 flex items-center gap-1.5">
                                                             <Zap size={10} /> Indicateurs
                                                         </span>
-                                                        <p className="text-[11px] text-slate-600 leading-relaxed font-medium">{r.indicators}</p>
+                                                        <div className="text-[11px] text-slate-600 leading-relaxed font-medium quill-content" dangerouslySetInnerHTML={{ __html: r.indicators }}></div>
                                                     </div>
                                                     <div className="space-y-1">
                                                         <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500 flex items-center gap-1.5">
                                                             <CheckCircle2 size={10} /> Résultats Obtenus
                                                         </span>
-                                                        <p className="text-[11px] text-slate-600 leading-relaxed font-medium">{r.obtainedResults}</p>
+                                                        <div className="text-[11px] text-slate-600 leading-relaxed font-medium quill-content" dangerouslySetInnerHTML={{ __html: r.obtainedResults }}></div>
                                                     </div>
                                                 </div>
                                                 <div className="px-6 py-4 bg-slate-50/50 border-t border-slate-50 grid grid-cols-3 gap-2">
@@ -1692,17 +1693,17 @@ const UnitDetails: React.FC<UnitDetailsProps> = ({ unit, onBack, onUpdate, isAdm
                                                         <td className="px-4 py-5 font-black text-indigo-600 whitespace-nowrap">
                                                             {isEditing ? <input value={r.date} type="date" onChange={e => setLocalActivityReports(prev => prev.map(i => i.id === r.id ? { ...i, date: e.target.value } : i))} className="w-full bg-white border border-slate-200 p-2 rounded-lg text-[10px]" /> : r.date}
                                                         </td>
-                                                        <td className="px-4 py-5 font-black text-slate-800 text-left min-w-[200px]">
-                                                            {isEditing ? <textarea value={r.activity} onChange={e => setLocalActivityReports(prev => prev.map(i => i.id === r.id ? { ...i, activity: e.target.value } : i))} className="w-full bg-white border border-slate-200 p-2 rounded-lg text-[10px]" rows={2} /> : r.activity}
+                                                        <td className="px-4 py-5 font-black text-slate-800 text-left min-w-[300px]">
+                                                            {isEditing ? <RichTextEditor value={r.activity} onChange={content => setLocalActivityReports(prev => prev.map(i => i.id === r.id ? { ...i, activity: content } : i))} /> : <div dangerouslySetInnerHTML={{ __html: r.activity }} />}
                                                         </td>
-                                                        <td className="px-4 py-5 text-left leading-relaxed min-w-[200px] text-slate-500">
-                                                            {isEditing ? <textarea value={r.expectedResults} onChange={e => setLocalActivityReports(prev => prev.map(i => i.id === r.id ? { ...i, expectedResults: e.target.value } : i))} className="w-full bg-white border border-slate-200 p-2 rounded-lg text-[10px]" rows={2} /> : r.expectedResults}
+                                                        <td className="px-4 py-5 text-left leading-relaxed min-w-[300px] text-slate-500">
+                                                            {isEditing ? <RichTextEditor value={r.expectedResults} onChange={content => setLocalActivityReports(prev => prev.map(i => i.id === r.id ? { ...i, expectedResults: content } : i))} /> : <div dangerouslySetInnerHTML={{ __html: r.expectedResults }} />}
                                                         </td>
-                                                        <td className="px-4 py-5 text-left leading-relaxed min-w-[200px] text-slate-500">
-                                                            {isEditing ? <textarea value={r.indicators} onChange={e => setLocalActivityReports(prev => prev.map(i => i.id === r.id ? { ...i, indicators: e.target.value } : i))} className="w-full bg-white border border-slate-200 p-2 rounded-lg text-[10px]" rows={2} /> : r.indicators}
+                                                        <td className="px-4 py-5 text-left leading-relaxed min-w-[300px] text-slate-500">
+                                                            {isEditing ? <RichTextEditor value={r.indicators} onChange={content => setLocalActivityReports(prev => prev.map(i => i.id === r.id ? { ...i, indicators: content } : i))} /> : <div dangerouslySetInnerHTML={{ __html: r.indicators }} />}
                                                         </td>
-                                                        <td className="px-4 py-5 text-left leading-relaxed min-w-[200px] text-slate-500 border-r border-slate-50">
-                                                            {isEditing ? <textarea value={r.obtainedResults} onChange={e => setLocalActivityReports(prev => prev.map(i => i.id === r.id ? { ...i, obtainedResults: e.target.value } : i))} className="w-full bg-white border border-slate-200 p-2 rounded-lg text-[10px]" rows={2} /> : r.obtainedResults}
+                                                        <td className="px-4 py-5 text-left leading-relaxed min-w-[300px] text-slate-500 border-r border-slate-50">
+                                                            {isEditing ? <RichTextEditor value={r.obtainedResults} onChange={content => setLocalActivityReports(prev => prev.map(i => i.id === r.id ? { ...i, obtainedResults: content } : i))} /> : <div dangerouslySetInnerHTML={{ __html: r.obtainedResults }} />}
                                                         </td>
                                                         <td className="px-4 py-5 font-black text-slate-800">
                                                             {isEditing ? <input value={r.product} type="number" onChange={e => setLocalActivityReports(prev => prev.map(i => i.id === r.id ? { ...i, product: e.target.value } : i))} className="w-full bg-white border border-slate-200 p-2 rounded-lg text-center" /> : r.product}
@@ -1713,8 +1714,8 @@ const UnitDetails: React.FC<UnitDetailsProps> = ({ unit, onBack, onUpdate, isAdm
                                                         <td className="px-4 py-5 font-black text-indigo-600 bg-slate-50/30">
                                                             {isEditing ? <input value={r.financialResources} type="number" onChange={e => setLocalActivityReports(prev => prev.map(i => i.id === r.id ? { ...i, financialResources: e.target.value } : i))} className="w-full bg-white border border-slate-200 p-2 rounded-lg text-center" /> : (parseInt(r.financialResources || '0')).toLocaleString()}
                                                         </td>
-                                                        <td className="px-4 py-5 text-left italic text-slate-400 min-w-[200px]">
-                                                            {isEditing ? <textarea value={r.observations} onChange={e => setLocalActivityReports(prev => prev.map(i => i.id === r.id ? { ...i, observations: e.target.value } : i))} className="w-full bg-white border border-slate-200 p-2 rounded-lg text-[10px]" rows={2} /> : r.observations}
+                                                        <td className="px-4 py-5 text-left italic text-slate-400 min-w-[300px]">
+                                                            {isEditing ? <RichTextEditor value={r.observations} onChange={content => setLocalActivityReports(prev => prev.map(i => i.id === r.id ? { ...i, observations: content } : i))} /> : <div className="quill-content" dangerouslySetInnerHTML={{ __html: r.observations }} />}
                                                         </td>
                                                         {isEditing && <td className="px-4 py-5"><button onClick={() => removeItem('ACTIVITY_GRID', r.id)} className="text-slate-300 hover:text-red-500 transition-colors"><Trash2 size={18} /></button></td>}
                                                     </tr>
@@ -1838,6 +1839,12 @@ const UnitDetails: React.FC<UnitDetailsProps> = ({ unit, onBack, onUpdate, isAdm
         .custom-scrollbar::-webkit-scrollbar { width: 8px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.05); border-radius: 20px; }
+        
+        .quill-content ul { list-style-type: disc; padding-left: 1.5rem; margin-top: 0.5rem; margin-bottom: 0.5rem; }
+        .quill-content ol { list-style-type: decimal; padding-left: 1.5rem; margin-top: 0.5rem; margin-bottom: 0.5rem; }
+        .quill-content p { margin-bottom: 0.5rem; }
+        .quill-content b, .quill-content strong { font-weight: 800; }
+        .quill-content i, .quill-content em { font-style: italic; }
         
         @media print {
             @page { margin: 1cm; size: landscape; }
