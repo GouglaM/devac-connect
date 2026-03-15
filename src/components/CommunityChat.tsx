@@ -6,8 +6,8 @@ import { subscribeToChat, sendMessageToDB, deleteMessageFromDB, subscribeToUnits
 const CommunityChat: React.FC = () => {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [input, setInput] = useState('');
-    const [nickname, setNickname] = useState(() => localStorage.getItem('chat_nickname') || '');
-    const [currentUserId, setCurrentUserId] = useState(() => localStorage.getItem('chat_user_id') || '');
+    const [nickname, setNickname] = useState(() => localStorage.getItem('chat_nickname_v2') || '');
+    const [currentUserId, setCurrentUserId] = useState(() => localStorage.getItem('chat_user_id_v2') || '');
     const [recipient, setRecipient] = useState<{ id: string, name: string } | null>(null);
     const [units, setUnits] = useState<EvangelismUnit[]>([]);
     const [committees, setCommittees] = useState<Committee[]>([]);
@@ -21,17 +21,30 @@ const CommunityChat: React.FC = () => {
 
     // Initialize User
     useEffect(() => {
-        if (!currentUserId) {
-            const prompted = prompt("Entrez votre nom complet pour le chat :");
+        if (!currentUserId && units.length > 0) {
+            const prompted = prompt("Entrez votre nom complet pour le chat (ex: MARCELLO) :");
             if (prompted) {
-                const newId = 'u_' + Date.now();
+                const normalizedNick = prompted.trim().toUpperCase();
+                let foundId = '';
+
+                // Detect if this is a known member to use their permanent ID
+                units.forEach(u => u.members.forEach(m => {
+                    if (m.name.trim().toUpperCase() === normalizedNick) foundId = m.id;
+                }));
+                if (!foundId) {
+                    committees.forEach(c => c.members.forEach(m => {
+                        if (m.name.trim().toUpperCase() === normalizedNick) foundId = m.id;
+                    }));
+                }
+
+                const newId = foundId || 'u_' + Date.now();
                 setNickname(prompted);
                 setCurrentUserId(newId);
-                localStorage.setItem('chat_nickname', prompted);
-                localStorage.setItem('chat_user_id', newId);
+                localStorage.setItem('chat_nickname_v2', prompted);
+                localStorage.setItem('chat_user_id_v2', newId);
             }
         }
-    }, [currentUserId]);
+    }, [currentUserId, units, committees]);
 
     // Subscriptions
     useEffect(() => {
@@ -205,7 +218,7 @@ const CommunityChat: React.FC = () => {
                                 <h2 className="font-bold text-slate-800 text-lg leading-tight">
                                     {recipient ? recipient.name : 'Chat Communautaire'}
                                 </h2>
-                                <span className="text-[10px] text-slate-300 font-mono">v2.1</span>
+                                <span className="text-[10px] text-slate-300 font-mono">v2.2.1</span>
                                 {recipient && (
                                     <span className="bg-rose-100 text-rose-600 text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider animate-pulse">
                                         Privé
