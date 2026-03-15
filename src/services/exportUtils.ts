@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-import { Document, Paragraph, Table, TableRow, TableCell, TextRun, HeadingLevel, WidthType, AlignmentType, Packer, VerticalAlign, PageOrientation } from 'docx';
+import { Document, Paragraph, Table, TableRow, TableCell, TextRun, HeadingLevel, WidthType, AlignmentType, Packer, VerticalAlign, PageOrientation, TableBorders } from 'docx';
 import PptxGenJS from 'pptxgenjs';
 
 // ========================
@@ -209,7 +209,9 @@ export const exportToDOCX = async (
 export const exportActivityGridToDOCX = async (
     title: string,
     rows: string[][],
-    filename: string
+    filename: string,
+    leaderName?: string,
+    assistantName?: string
 ) => {
     const headerRedText = (main: string, sub: string) => [
         new TextRun({ text: main, bold: true, color: '000000', size: 18 }),
@@ -286,6 +288,54 @@ export const exportActivityGridToDOCX = async (
                 new Table({
                     rows: tableRows,
                     width: { size: 100, type: WidthType.PERCENTAGE }
+                }),
+                new Paragraph({ text: '', spacing: { before: 400 } }),
+                new Paragraph({
+                    children: [
+                        new TextRun({
+                            text: `Fait à Abidjan, le ${new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}`,
+                            italics: true,
+                            size: 20
+                        })
+                    ],
+                    alignment: AlignmentType.RIGHT,
+                    spacing: { after: 300 }
+                }),
+                new Table({
+                    width: { size: 100, type: WidthType.PERCENTAGE },
+                    borders: TableBorders.NONE,
+                    rows: [
+                        new TableRow({
+                            children: [
+                                new TableCell({
+                                    children: [
+                                        new Paragraph({
+                                            children: [new TextRun({ text: "Le Responsable Principal", bold: true, size: 18 })],
+                                            alignment: AlignmentType.CENTER,
+                                            spacing: { after: 800 }
+                                        }),
+                                        new Paragraph({
+                                            children: [new TextRun({ text: leaderName?.toUpperCase() || "NOM DU RESPONSABLE", bold: true, color: '1E4DA1', size: 18 })],
+                                            alignment: AlignmentType.CENTER
+                                        })
+                                    ]
+                                }),
+                                new TableCell({
+                                    children: [
+                                        new Paragraph({
+                                            children: [new TextRun({ text: "L'Adjoint", bold: true, size: 18 })],
+                                            alignment: AlignmentType.CENTER,
+                                            spacing: { after: 800 }
+                                        }),
+                                        new Paragraph({
+                                            children: [new TextRun({ text: assistantName?.toUpperCase() || "NOM DE L'ADJOINT", bold: true, color: '1E4DA1', size: 18 })],
+                                            alignment: AlignmentType.CENTER
+                                        })
+                                    ]
+                                })
+                            ]
+                        })
+                    ]
                 })
             ]
         }],
@@ -607,7 +657,8 @@ export const exportData = async (
     filename: string,
     title: string = 'Rapport DEVAC',
     summary?: { label: string, value: string },
-    bilanContext?: { unitName: string, year: string, bilanData: any, stats: any, leaderName?: string } // New context for Bilan
+    bilanContext?: { unitName: string, year: string, bilanData: any, stats: any, leaderName?: string },
+    gridContext?: { leaderName: string, assistantName: string }
 ) => {
     const dataObjects = rows.map(row => {
         const obj: Record<string, string> = {};
@@ -624,7 +675,7 @@ export const exportData = async (
             await exportBilanToDOCX(bilanContext.unitName, bilanContext.year, bilanContext.bilanData, bilanContext.stats, bilanContext.leaderName);
             return;
         }
-        if (title.includes('ACTIVITY_GRID')) await exportActivityGridToDOCX(title, rows, filename);
+        if (title.includes('ACTIVITY_GRID')) await exportActivityGridToDOCX(title, rows, filename, gridContext?.leaderName, gridContext?.assistantName);
         else if (title.includes('REPORTS')) await exportMissionReportsToDOCX(title, rows, filename);
         else await exportToDOCX(title, headers, rows, filename, summary);
     } else if (format === 'PPTX') {

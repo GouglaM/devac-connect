@@ -345,7 +345,10 @@ const UnitDetails: React.FC<UnitDetailsProps> = ({ unit, onBack, onUpdate, isAdm
             ]);
         }
 
-        await exportData(format, headers, rows, filename, title, summary);
+        await exportData(format, headers, rows, filename, title, summary, undefined, {
+            leaderName: localLeader.name,
+            assistantName: localAssistant.name
+        });
         setShowExportMenu(false);
     };
 
@@ -1747,6 +1750,21 @@ const UnitDetails: React.FC<UnitDetailsProps> = ({ unit, onBack, onUpdate, isAdm
                                                 ))}
                                             </tbody>
                                         </table>
+                                        <div className="mt-12 flex flex-col items-end gap-10 pr-12">
+                                            <div className="text-sm font-bold text-slate-800 italic">
+                                                Fait à Abidjan, le {new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                                            </div>
+                                            <div className="flex justify-between w-full mt-4">
+                                                <div className="flex flex-col items-center gap-2 text-center">
+                                                    <div className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-12">Le Responsable Principal</div>
+                                                    <div className="text-sm font-black text-[#1E4DA1] border-b-2 border-slate-100 pb-1 px-4">{localLeader.name.toUpperCase() || 'NOM DU RESPONSABLE'}</div>
+                                                </div>
+                                                <div className="flex flex-col items-center gap-2 text-center">
+                                                    <div className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-12">L'Adjoint</div>
+                                                    <div className="text-sm font-black text-[#1E4DA1] border-b-2 border-slate-100 pb-1 px-4">{localAssistant.name.toUpperCase() || "NOM DE L'ADJOINT"}</div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 )}
                             </div>
