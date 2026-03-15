@@ -129,11 +129,23 @@ const CommunityChat: React.FC = () => {
         };
 
         console.log(`[Chat] Sending ${type} message to ${recipient?.id || 'ALL'}. Sender ID: ${currentUserId}`);
-        sendMessageToDB(msg);
-        if (type === 'text') setInput('');
+        sendMessageToDB(msg)
+            .then(() => {
+                console.log("[Chat] Message sent successfully!");
+                if (type === 'text') setInput('');
+            })
+            .catch(err => {
+                console.error("[Chat] Failed to send:", err);
+                alert("Erreur lors de l'envoi : " + err.message);
+            });
     };
 
-    const handleResetIdentity = () => {
+    const forceRefresh = () => {
+        setMessages([]);
+        console.log("[Chat] Force refresh triggered. Messages cleared.");
+    };
+
+    const handleResetChat = () => {
         if (window.confirm("Voulez-vous réinitialiser votre identité de chat ? (Cela vous demandera votre nom à nouveau)")) {
             localStorage.removeItem('chat_nickname_v2');
             localStorage.removeItem('chat_user_id_v2');
@@ -194,8 +206,8 @@ const CommunityChat: React.FC = () => {
                     <div className="flex items-center gap-2 mb-4">
                         <h3 className="font-black text-slate-800 text-xl flex-1">Discussions</h3>
                         <div className="flex gap-1">
-                            <button className="p-2 hover:bg-white rounded-lg text-slate-400"><MessageCircle size={18} /></button>
-                            <button className="p-2 hover:bg-white rounded-lg text-slate-400" onClick={handleResetIdentity}><RefreshCcw size={18} /></button>
+                            <button className="p-2 hover:bg-white rounded-lg text-slate-400" onClick={forceRefresh} title="Actualiser les messages"><RefreshCcw size={18} /></button>
+                            <button className="p-2 hover:bg-white rounded-lg text-slate-400" onClick={handleResetChat} title="Changer de compte"><User size={18} /></button>
                         </div>
                     </div>
                     <div className="relative mb-4">

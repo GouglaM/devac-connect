@@ -135,6 +135,29 @@ const SyncDebug: React.FC = () => {
         }
     };
 
+    const handleTestSend = async () => {
+        if (!chatIdentity?.id || chatIdentity.id === 'None') {
+            alert("Identification requise avant le test.");
+            return;
+        }
+        setLastError("Envoi d'un message de test...");
+        try {
+            const { sendMessageToDB } = await import('../services/firebaseService');
+            await sendMessageToDB({
+                id: 'debug_' + Date.now(),
+                sender: chatIdentity.id,
+                senderName: chatIdentity.name + " (DEBUG)",
+                recipientId: 'm15',
+                text: "TEST DE SYNCHRONISATION (ID: " + chatIdentity.id + ")",
+                type: 'text',
+                timestamp: Date.now()
+            });
+            setLastError("✅ Message de test envoyé ! Attendez la sync...");
+        } catch (e: any) {
+            setLastError("❌ Erreur test send: " + e.message);
+        }
+    };
+
 
     return (
         <>
@@ -309,6 +332,21 @@ const SyncDebug: React.FC = () => {
                             }}
                         >
                             4. RÉINITIALISER IDENTITÉ CHAT
+                        </button>
+                        <button
+                            onClick={handleTestSend}
+                            style={{
+                                backgroundColor: '#9333ea',
+                                color: 'white',
+                                border: 'none',
+                                padding: '6px',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontWeight: 'bold',
+                                fontSize: '10px',
+                            }}
+                        >
+                            5. TEST SEND MESSAGE TO YAPI (m15)
                         </button>
                     </div>
 
