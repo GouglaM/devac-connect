@@ -12,6 +12,7 @@ const SyncDebug: React.FC = () => {
     const [isRepairing, setIsRepairing] = useState(false);
     const [configStatus, setConfigStatus] = useState<string>('Unknown');
     const [authError, setAuthError] = useState<string | null>(null);
+    const [chatIdentity, setChatIdentity] = useState<{ name: string, id: string } | null>(null);
     const [isVisible, setIsVisible] = useState(true);
 
     useEffect(() => {
@@ -39,7 +40,7 @@ const SyncDebug: React.FC = () => {
             setAuthError(error.message);
         });
 
-        // RDB connection check might be false negative if RDB not enabled.
+        // connection check 
         const unsubConnection = subscribeToConnectionStatus((status) => setIsConnected(status));
 
         const unsubUnits = subscribeToUnits((units) => {
@@ -54,19 +55,27 @@ const SyncDebug: React.FC = () => {
             setAttendanceCount(sessions.length);
         });
 
-        // Global error handler for this component context
+        // Global error handler 
         const errorHandler = (event: ErrorEvent) => {
             setLastError(event.message);
         };
         window.addEventListener('error', errorHandler);
 
-        // Periodically check for Firestore-specific errors that might not trigger window error
+        // Periodically check for Firestore-specific errors
         const errorCheckInterval = setInterval(() => {
             const fsError = getFirestoreError();
             if (fsError) {
                 setLastError(`Firestore: ${fsError.message || fsError.code || JSON.stringify(fsError)}`);
             }
         }, 2000);
+
+        // Chat identity check
+        const chatCheck = setInterval(() => {
+            setChatIdentity({
+                name: localStorage.getItem('chat_nickname_v2') || localStorage.getItem('chat_nickname') || 'None',
+                id: localStorage.getItem('chat_user_id_v2') || localStorage.getItem('chat_user_id') || 'None'
+            });
+        }, 1000);
 
         return () => {
             unsubAuth();
@@ -76,6 +85,7 @@ const SyncDebug: React.FC = () => {
             unsubAttendance();
             window.removeEventListener('error', errorHandler);
             clearInterval(errorCheckInterval);
+            clearInterval(chatCheck);
         };
     }, []);
 
@@ -101,7 +111,13 @@ const SyncDebug: React.FC = () => {
         } finally {
             setIsRepairing(false);
         }
-    }
+    };
+
+    const handleResetChat = () => {
+        const keys = ['chat_nickname', 'chat_user_id', 'chat_nickname_v2', 'chat_user_id_v2'];
+        keys.forEach(k => localStorage.removeItem(k));
+        window.location.reload();
+    };
 
     const handleTestConnection = async () => {
         setLastError("Test de connexion en cours...");
@@ -209,6 +225,16 @@ const SyncDebug: React.FC = () => {
                         </div>
                     </div>
 
+                    <div style={{ marginBottom: '10px', background: '#374151', padding: '8px', borderRadius: '4px', borderLeft: '3px solid #6366f1' }}>
+                        <div style={{ color: '#818cf8', fontWeight: 'bold', fontSize: '9px', marginBottom: '4px' }}>CHAT IDENTITY</div>
+                        <div style={{ color: '#e5e7eb', fontSize: '10px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            Pseudo: <span style={{ color: '#fff' }}>{chatIdentity?.name}</span>
+                        </div>
+                        <div style={{ color: '#e5e7eb', fontSize: '9px', opacity: 0.7 }}>
+                            ID: {chatIdentity?.id}
+                        </div>
+                    </div>
+
                     <div style={{ display: 'flex', gap: '5px', flexDirection: 'column' }}>
                         <button
                             onClick={handleForceRepair}
@@ -246,7 +272,7 @@ const SyncDebug: React.FC = () => {
                             onClick={handleInit}
                             disabled={isRepairing}
                             style={{
-                                backgroundColor: isRepairing ? '#4b5563' : '#7c3aed',
+                                backgroundColor: isRepairing ? '#4b5563' : '#dc2626',
                                 color: 'white',
                                 border: 'none',
                                 padding: '6px',
@@ -257,7 +283,22 @@ const SyncDebug: React.FC = () => {
                                 transition: 'background 0.2s'
                             }}
                         >
-                            {isRepairing ? 'TRAITEMENT...' : '3. FORCE RE-SEED (Complet)'}
+                            {isRepairing ? 'TRAITEMENT...' : '3. FORCE RESET DATA (Caution)'}
+                        </button>
+                        <button
+                            onClick={handleResetChat}
+                            style={{
+                                backgroundColor: '#f59e0b',
+                                color: 'white',
+                                border: 'none',
+                                padding: '6px',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontWeight: 'bold',
+                                fontSize: '10px',
+                            }}
+                        >
+                            4. RÉINITIALISER IDENTITÉ CHAT
                         </button>
                     </div>
 

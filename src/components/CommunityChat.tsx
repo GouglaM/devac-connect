@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Send, User, MessageCircle, Mic, Square, Play, Pause, Trash2, Users, Search, ChevronRight, X, Smile, Shield } from 'lucide-react';
+import { Send, User, MessageCircle, Mic, Square, Play, Pause, Trash2, Users, Search, ChevronRight, X, Smile, Shield, RefreshCcw } from 'lucide-react';
 import { ChatMessage, EvangelismUnit, Committee, Member } from '../types';
 import { subscribeToChat, sendMessageToDB, deleteMessageFromDB, subscribeToUnits, subscribeToCommittees } from '../services/dataService';
 
@@ -106,6 +106,14 @@ const CommunityChat: React.FC = () => {
 
         sendMessageToDB(msg);
         if (type === 'text') setInput('');
+    };
+
+    const handleResetIdentity = () => {
+        if (window.confirm("Voulez-vous réinitialiser votre identité de chat ? (Cela vous demandera votre nom à nouveau)")) {
+            localStorage.removeItem('chat_nickname_v2');
+            localStorage.removeItem('chat_user_id_v2');
+            window.location.reload();
+        }
     };
 
     // Audio Recording Logic
@@ -218,7 +226,14 @@ const CommunityChat: React.FC = () => {
                                 <h2 className="font-bold text-slate-800 text-lg leading-tight">
                                     {recipient ? recipient.name : 'Chat Communautaire'}
                                 </h2>
-                                <span className="text-[10px] text-slate-300 font-mono">v2.2.1</span>
+                                <span className="text-[10px] text-slate-300 font-mono">v2.3</span>
+                                <button
+                                    onClick={handleResetIdentity}
+                                    title="Changer d'identité / Réinitialiser"
+                                    className="p-1 hover:bg-slate-50 rounded text-slate-300 hover:text-rose-500 transition-colors"
+                                >
+                                    <RefreshCcw size={10} />
+                                </button>
                                 {recipient && (
                                     <span className="bg-rose-100 text-rose-600 text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider animate-pulse">
                                         Privé
