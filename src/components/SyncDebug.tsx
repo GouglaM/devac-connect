@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { subscribeToConnectionStatus, subscribeToUnits, subscribeToCommittees, subscribeToAttendance, forceRepairAllUnits, initializeData, getFirestoreError, testFirestoreConnection } from '../services/firebaseService';
+import { subscribeToConnectionStatus, subscribeToUnits, subscribeToCommittees, subscribeToAttendance, forceRepairAllUnits, initializeData, getFirestoreError, testFirestoreConnection, subscribeToChat } from '../services/firebaseService';
 import { getAuth } from 'firebase/auth';
 import { getApp } from 'firebase/app';
 
@@ -8,6 +8,7 @@ const SyncDebug: React.FC = () => {
     const [unitsCount, setUnitsCount] = useState<number | null>(null);
     const [committeesCount, setCommitteesCount] = useState<number | null>(null);
     const [attendanceCount, setAttendanceCount] = useState<number | null>(null);
+    const [chatCount, setChatCount] = useState<number | null>(null);
     const [lastError, setLastError] = useState<string | null>(null);
     const [isRepairing, setIsRepairing] = useState(false);
     const [configStatus, setConfigStatus] = useState<string>('Unknown');
@@ -55,6 +56,10 @@ const SyncDebug: React.FC = () => {
             setAttendanceCount(sessions.length);
         });
 
+        const unsubChat = subscribeToChat((msgs) => {
+            setChatCount(msgs.length);
+        });
+
         // Global error handler 
         const errorHandler = (event: ErrorEvent) => {
             setLastError(event.message);
@@ -83,6 +88,7 @@ const SyncDebug: React.FC = () => {
             unsubUnits();
             unsubCommittees();
             unsubAttendance();
+            unsubChat();
             window.removeEventListener('error', errorHandler);
             clearInterval(errorCheckInterval);
             clearInterval(chatCheck);
@@ -222,6 +228,10 @@ const SyncDebug: React.FC = () => {
                         <div style={{ textAlign: 'center' }}>
                             <div style={{ color: '#9ca3af', fontSize: '9px' }}>SESSIONS</div>
                             <div style={{ color: '#fff', fontWeight: 'bold', fontSize: '14px' }}>{attendanceCount ?? '-'}</div>
+                        </div>
+                        <div style={{ textAlign: 'center' }}>
+                            <div style={{ color: '#9ca3af', fontSize: '9px' }}>CHAT</div>
+                            <div style={{ color: '#4ade80', fontWeight: 'bold', fontSize: '14px' }}>{chatCount ?? '-'}</div>
                         </div>
                     </div>
 

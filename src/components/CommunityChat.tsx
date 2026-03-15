@@ -94,15 +94,18 @@ const CommunityChat: React.FC = () => {
 
     // Derived Messages for current view
     const visibleMessages = useMemo(() => {
+        console.log(`[Chat] Recalculating visibleMessages. CurrentUser: ${currentUserId}, Recipient: ${recipient?.id || 'Public'}, Total Messages: ${messages.length}`);
         if (!recipient) {
             // Public view: only messages with recipientId === 'ALL' or !recipientId
             return messages.filter(m => !m.recipientId || m.recipientId === 'ALL');
         } else {
             // Private view: Only bilateral exchange between ME and HIM
-            return messages.filter(m =>
+            const filtered = messages.filter(m =>
                 (m.sender === currentUserId && m.recipientId === recipient.id) ||
                 (m.sender === recipient.id && m.recipientId === currentUserId)
             );
+            console.log(`[Chat] Filtered bilateral: ${filtered.length} messages.`);
+            return filtered;
         }
     }, [messages, recipient, currentUserId]);
 
@@ -120,6 +123,7 @@ const CommunityChat: React.FC = () => {
             timestamp: Date.now()
         };
 
+        console.log(`[Chat] Sending ${type} message to ${recipient?.id || 'ALL'}. Sender ID: ${currentUserId}`);
         sendMessageToDB(msg);
         if (type === 'text') setInput('');
     };

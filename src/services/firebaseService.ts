@@ -421,8 +421,10 @@ export const importMembersFromCSV = async (file: File) => {
   return importedCount;
 };
 
-export const subscribeToChat = (cb: (m: ChatMessage[]) => void, currentUserId?: string) =>
-  onSnapshot(query(collection(db, "chat"), orderBy("timestamp", "asc")), s => {
+export const subscribeToChat = (cb: (m: ChatMessage[]) => void, currentUserId?: string) => {
+  console.log(`[Firestore] Subscribing to Chat. CurrentUserId: ${currentUserId || 'None'}`);
+  return onSnapshot(query(collection(db, "chat"), orderBy("timestamp", "asc")), s => {
+    console.log(`[Firestore] Chat Snapshot: ${s.docs.length} total messages in collection.`);
     const allMessages = s.docs.map(d => ({ ...d.data(), id: d.id } as ChatMessage));
     // Filter: Public messages OR (Private and I am the sender) OR (Private and I am the recipient)
     const filtered = allMessages.filter(m =>
@@ -431,8 +433,13 @@ export const subscribeToChat = (cb: (m: ChatMessage[]) => void, currentUserId?: 
       m.sender === currentUserId ||
       m.recipientId === currentUserId
     );
+    console.log(`[Firestore] Chat Filtered: ${filtered.length} messages visible for ${currentUserId || 'Public'}`);
     cb(filtered);
+  }, (error) => {
+    console.error("[Firestore] Error in chat sub:", error);
+    lastFirestoreError = error;
   });
+};
 
 export const deleteMessageFromDB = async (id: string) => {
   try {
