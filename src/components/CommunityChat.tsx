@@ -205,7 +205,7 @@ const CommunityChat: React.FC = () => {
                                 <h2 className="font-bold text-slate-800 text-lg leading-tight">
                                     {recipient ? recipient.name : 'Chat Communautaire'}
                                 </h2>
-                                <span className="text-[10px] text-slate-300 font-mono">v2.0</span>
+                                <span className="text-[10px] text-slate-300 font-mono">v2.1</span>
                                 {recipient && (
                                     <span className="bg-rose-100 text-rose-600 text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider animate-pulse">
                                         Privé
@@ -235,14 +235,14 @@ const CommunityChat: React.FC = () => {
                             if (m.deleted) return null;
 
                             return (
-                                <div key={m.id} className={`flex gap-3 group ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
+                                <div key={m.id} className={`flex gap-3 group ${isMe ? 'flex-row' : 'flex-row-reverse'}`}>
                                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black shadow-sm flex-shrink-0 mt-1 ${isMe ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-400'}`}>
                                         {m.senderName?.charAt(0) || 'U'}
                                     </div>
-                                    <div className={`flex flex-col max-w-[70%] ${isMe ? 'items-end' : 'items-start'}`}>
+                                    <div className={`flex flex-col max-w-[70%] ${isMe ? 'items-start' : 'items-end'}`}>
                                         <div className={`relative px-4 py-3 rounded-2xl shadow-sm transition-all group-hover:shadow-md ${isMe
-                                            ? 'bg-indigo-600 text-white rounded-tr-none'
-                                            : 'bg-slate-100 text-slate-700 rounded-tl-none border border-slate-200'
+                                            ? 'bg-indigo-600 text-white rounded-tl-none'
+                                            : 'bg-slate-100 text-slate-700 rounded-tr-none border border-slate-200'
                                             }`}>
                                             {m.type === 'audio' ? (
                                                 <div className="flex items-center gap-3 min-w-[200px]">
@@ -258,13 +258,13 @@ const CommunityChat: React.FC = () => {
                                             {isMe && (
                                                 <button
                                                     onClick={() => handleDelete(m.id)}
-                                                    className="absolute -left-10 top-1/2 -translate-y-1/2 p-2 text-slate-400 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all"
+                                                    className={`absolute ${isMe ? '-right-10' : '-left-10'} top-1/2 -translate-y-1/2 p-2 text-slate-400 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all`}
                                                 >
                                                     <Trash2 size={18} />
                                                 </button>
                                             )}
                                         </div>
-                                        <div className={`flex items-center gap-2 mt-1.5 px-1 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
+                                        <div className={`flex items-center gap-2 mt-1.5 px-1 ${isMe ? 'flex-row' : 'flex-row-reverse'}`}>
                                             <span className="text-[10px] font-black text-slate-500 uppercase tracking-tight">{m.senderName}</span>
                                             <span className="text-[9px] text-slate-400 font-medium opacity-60">
                                                 {new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
