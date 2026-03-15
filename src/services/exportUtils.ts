@@ -261,8 +261,25 @@ export const exportActivityGridToDOCX = async (
             properties: { page: { size: { orientation: PageOrientation.LANDSCAPE }, margin: { top: 720, right: 720, bottom: 720, left: 720 } } },
             children: [
                 new Paragraph({
-                    text: 'GRILLE DE RAPPORT D’ACTIVITE',
-                    heading: HeadingLevel.HEADING_1,
+                    children: [
+                        new TextRun({
+                            text: 'GRILLE DE RAPPORT D’ACTIVITE',
+                            bold: true,
+                            color: '1E4DA1',
+                            size: 40
+                        })
+                    ],
+                    alignment: AlignmentType.CENTER,
+                    spacing: { after: 200 }
+                }),
+                new Paragraph({
+                    children: [
+                        new TextRun({ text: 'UNITÉ : ', bold: true, size: 20 }),
+                        new TextRun({ text: title.toUpperCase(), bold: true, color: '1E4DA1', size: 20 }),
+                        new TextRun({ text: '    |    ', size: 20 }),
+                        new TextRun({ text: 'ACTIVITÉ N° : ', bold: true, size: 20 }),
+                        new TextRun({ text: (rows.length).toString(), bold: true, color: '1E4DA1', size: 20 }),
+                    ],
                     alignment: AlignmentType.CENTER,
                     spacing: { after: 400 }
                 }),

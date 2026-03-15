@@ -1669,9 +1669,17 @@ const UnitDetails: React.FC<UnitDetailsProps> = ({ unit, onBack, onUpdate, isAdm
                                     </div>
                                 ) : (
                                     <div className="overflow-x-auto p-4 bg-white">
-                                        <div className="text-center mb-8 space-y-1">
-                                            <div className="text-2xl font-black text-slate-900 uppercase tracking-tight">
+                                        <div className="text-center mb-8 space-y-2">
+                                            <div className="text-3xl font-black text-[#1E4DA1] uppercase tracking-tight">
                                                 GRILLE DE RAPPORT D’ACTIVITE
+                                            </div>
+                                            <div className="flex justify-center items-center gap-12 pt-2">
+                                                <div className="text-sm font-bold text-slate-800 uppercase bg-slate-50 px-4 py-1.5 rounded-full border border-slate-200">
+                                                    UNITÉ : <span className="text-[#1E4DA1]">{unit.name.toUpperCase()}</span>
+                                                </div>
+                                                <div className="text-sm font-bold text-slate-800 uppercase bg-slate-50 px-4 py-1.5 rounded-full border border-slate-200">
+                                                    ACTIVITÉ N° : <span className="text-[#1E4DA1]">{unit.activityReports?.length || 1}</span>
+                                                </div>
                                             </div>
                                         </div>
                                         <table className="w-full text-left min-w-[1400px] border-collapse border border-slate-900">
