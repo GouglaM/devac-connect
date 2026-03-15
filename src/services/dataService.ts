@@ -39,5 +39,6 @@ export {
     deleteCampaignDonation,
     subscribeToCampaignExpenses,
     saveCampaignExpenseToDB,
-    deleteCampaignExpense
+    deleteCampaignExpense,
+    deleteMessageFromDB
 } from './firebaseService';

@@ -421,10 +421,29 @@ export const importMembersFromCSV = async (file: File) => {
   return importedCount;
 };
 
-export const subscribeToChat = (cb: (m: ChatMessage[]) => void) =>
+export const subscribeToChat = (cb: (m: ChatMessage[]) => void, currentUserId?: string) =>
   onSnapshot(query(collection(db, "chat"), orderBy("timestamp", "asc")), s => {
-    cb(s.docs.map(d => ({ ...d.data(), id: d.id } as ChatMessage)));
+    const allMessages = s.docs.map(d => ({ ...d.data(), id: d.id } as ChatMessage));
+    // Filter: Public messages OR (Private and I am the sender) OR (Private and I am the recipient)
+    const filtered = allMessages.filter(m =>
+      !m.recipientId ||
+      m.recipientId === 'ALL' ||
+      m.sender === currentUserId ||
+      m.recipientId === currentUserId
+    );
+    cb(filtered);
   });
+
+export const deleteMessageFromDB = async (id: string) => {
+  try {
+    // We do a "soft delete" by updating the 'deleted' flag, or a hard delete.
+    // Let's go with hard delete for now to keep it simple, or update 'deleted' to true.
+    await updateDoc(doc(db, "chat", id), { deleted: true });
+  } catch (e) {
+    console.error("Error deleting message:", e);
+    throw e;
+  }
+};
 
 export const sendMessageToDB = async (msg: ChatMessage) => {
   try {

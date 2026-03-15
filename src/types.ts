@@ -226,8 +226,14 @@ export interface AttendanceSession {
 export interface ChatMessage {
   id: string;
   sender: string;
-  text: string;
+  senderName?: string;
+  recipientId?: string; // If undefined, it's a public message
+  text?: string;
+  audioUrl?: string; // Data URI for voice notes
+  stickerId?: string;
+  type: 'text' | 'audio' | 'sticker';
   timestamp: number;
+  deleted?: boolean;
 }
 
 export interface CampaignRegistration {
