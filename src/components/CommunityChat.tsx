@@ -119,16 +119,16 @@ const CommunityChat: React.FC = () => {
     const sendMessage = (type: 'text' | 'audio' = 'text', content?: string) => {
         if (type === 'text' && !input.trim()) return;
 
-        const msg: ChatMessage = {
+        const msg: any = {
             id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
             sender: currentUserId,
             senderName: nickname,
             recipientId: recipient?.id || 'ALL',
-            text: type === 'text' ? input : undefined,
-            audioUrl: type === 'audio' ? content : undefined,
             type,
             timestamp: Date.now()
         };
+        if (type === 'text') msg.text = input;
+        if (type === 'audio' && content) msg.audioUrl = content;
 
         console.log(`[Chat] Sending ${type} message to ${recipient?.id || 'ALL'}. Sender ID: ${currentUserId}`);
         sendMessageToDB(msg)
