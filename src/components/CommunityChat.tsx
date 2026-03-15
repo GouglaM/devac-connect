@@ -63,6 +63,20 @@ const CommunityChat: React.FC = () => {
         return all.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase()));
     }, [units, committees, currentUserId, searchTerm]);
 
+    // Derived Messages for current view
+    const visibleMessages = useMemo(() => {
+        if (!recipient) {
+            // Public view: only messages with recipientId === 'ALL' or !recipientId
+            return messages.filter(m => !m.recipientId || m.recipientId === 'ALL');
+        } else {
+            // Private view: Only bilateral exchange between ME and HIM
+            return messages.filter(m =>
+                (m.sender === currentUserId && m.recipientId === recipient.id) ||
+                (m.sender === recipient.id && m.recipientId === currentUserId)
+            );
+        }
+    }, [messages, recipient, currentUserId]);
+
     const sendMessage = (type: 'text' | 'audio' = 'text', content?: string) => {
         if (type === 'text' && !input.trim()) return;
 
@@ -208,7 +222,7 @@ const CommunityChat: React.FC = () => {
 
                 {/* Messages Container */}
                 <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide">
-                    {messages.length === 0 ? (
+                    {visibleMessages.length === 0 ? (
                         <div className="h-full flex flex-col items-center justify-center text-slate-300 space-y-4">
                             <div className="p-8 bg-slate-50 rounded-full animate-pulse">
                                 <MessageCircle size={64} className="opacity-10" />
@@ -216,7 +230,7 @@ const CommunityChat: React.FC = () => {
                             <p className="italic text-sm font-medium">Commencez la conversation...</p>
                         </div>
                     ) : (
-                        messages.map((m, idx) => {
+                        visibleMessages.map((m, idx) => {
                             const isMe = m.sender === currentUserId;
                             if (m.deleted) return null;
 
