@@ -187,12 +187,19 @@ const CommunityChat: React.FC = () => {
                             {recipient ? <User size={24} /> : <Users size={24} />}
                         </div>
                         <div>
-                            <h2 className="font-bold text-slate-800 text-lg leading-tight">
-                                {recipient ? recipient.name : 'Chat Communautaire'}
-                            </h2>
+                            <div className="flex items-center gap-2">
+                                <h2 className="font-bold text-slate-800 text-lg leading-tight">
+                                    {recipient ? recipient.name : 'Chat Communautaire'}
+                                </h2>
+                                {recipient && (
+                                    <span className="bg-rose-100 text-rose-600 text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider animate-pulse">
+                                        Privé
+                                    </span>
+                                )}
+                            </div>
                             <p className="text-xs text-slate-400 flex items-center gap-1">
                                 <span className={`w-2 h-2 rounded-full ${recipient ? 'bg-indigo-400' : 'bg-green-400'}`}></span>
-                                {recipient ? 'Message privé sécurisé' : 'Public - Tous les membres'}
+                                {recipient ? 'Discussion 1-à-1 sécurisée' : 'Public - Tous les membres'}
                             </p>
                         </div>
                     </div>
@@ -218,11 +225,9 @@ const CommunityChat: React.FC = () => {
                                         {m.senderName?.charAt(0) || 'U'}
                                     </div>
                                     <div className={`flex flex-col max-w-[70%] ${isMe ? 'items-end' : 'items-start'}`}>
-                                        {!isMe && <div className="text-[10px] font-black text-slate-400 ml-1 mb-1 uppercase tracking-tighter">{m.senderName}</div>}
-
                                         <div className={`relative px-4 py-3 rounded-2xl shadow-sm transition-all group-hover:shadow-md ${isMe
-                                            ? 'bg-indigo-600 text-white rounded-tr-none'
-                                            : 'bg-slate-50 text-slate-700 rounded-tl-none border border-slate-100'
+                                                ? 'bg-indigo-600 text-white rounded-tr-none'
+                                                : 'bg-slate-100 text-slate-700 rounded-tl-none border border-slate-200'
                                             }`}>
                                             {m.type === 'audio' ? (
                                                 <div className="flex items-center gap-3 min-w-[200px]">
@@ -238,14 +243,17 @@ const CommunityChat: React.FC = () => {
                                             {isMe && (
                                                 <button
                                                     onClick={() => handleDelete(m.id)}
-                                                    className="absolute -left-10 top-1/2 -translate-y-1/2 p-2 text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all scale-75"
+                                                    className="absolute -left-10 top-1/2 -translate-y-1/2 p-2 text-slate-400 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all"
                                                 >
-                                                    <Trash2 size={16} />
+                                                    <Trash2 size={18} />
                                                 </button>
                                             )}
                                         </div>
-                                        <div className="text-[9px] text-slate-400 mt-1 opacity-60">
-                                            {new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        <div className={`flex items-center gap-2 mt-1.5 px-1 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
+                                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-tight">{m.senderName}</span>
+                                            <span className="text-[9px] text-slate-400 font-medium opacity-60">
+                                                {new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
