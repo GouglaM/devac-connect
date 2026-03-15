@@ -1,0 +1,7 @@
+{
+    "name": "DEVAC",
+    "description": "Plateforme officielle du Département de l'Évangélisation du Diocèse de Cocody. Gestion des unités, suivi des âmes, actions sociales et registre des présences pour la grande mission.",
+    "requestFramePermissions": [
+        "microphone"
+    ]
+}
