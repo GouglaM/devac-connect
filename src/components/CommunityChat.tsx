@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Send, User, MessageCircle, Mic, Square, Play, Pause, Trash2, Users, Search, ChevronRight, X, Smile, Shield, RefreshCcw } from 'lucide-react';
+import { Send, User, MessageCircle, Mic, Square, Play, Pause, Trash2, Users, Search, ChevronRight, X, Smile, Shield, RefreshCcw, Phone, Video } from 'lucide-react';
 import { ChatMessage, EvangelismUnit, Committee, Member } from '../types';
 import { subscribeToChat, sendMessageToDB, deleteMessageFromDB, subscribeToUnits, subscribeToCommittees } from '../services/dataService';
 
@@ -62,19 +62,35 @@ const CommunityChat: React.FC = () => {
         chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
-    // Process Contacts
+    // Process Contacts with last message preview
     const contacts = useMemo(() => {
-        const all: { id: string, name: string, type: string }[] = [];
-        units.forEach(u => u.members.forEach(m => {
-            if (m.id !== currentUserId) all.push({ id: m.id, name: m.name, type: u.name });
-        }));
-        committees.forEach(c => c.members.forEach(m => {
-            if (m.id !== currentUserId && !all.find(a => a.id === m.id)) {
-                all.push({ id: m.id, name: m.name, type: c.name });
-            }
-        }));
-        return all.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase()));
-    }, [units, committees, currentUserId, searchTerm]);
+        const all: { id: string, name: string, type: string, lastMessage?: string, lastTime?: number }[] = [];
+        const processGroup = (members: Member[], groupName: string) => {
+            members.forEach(m => {
+                if (m.id !== currentUserId && !all.find(a => a.id === m.id)) {
+                    // Find last bilateral message
+                    const lastMsg = messages
+                        .filter(msg => (msg.sender === currentUserId && msg.recipientId === m.id) || (msg.sender === m.id && msg.recipientId === currentUserId))
+                        .sort((a, b) => b.timestamp - a.timestamp)[0];
+
+                    all.push({
+                        id: m.id,
+                        name: m.name,
+                        type: groupName,
+                        lastMessage: lastMsg?.text || (lastMsg?.type === 'audio' ? '🎵 Message vocal' : ''),
+                        lastTime: lastMsg?.timestamp
+                    });
+                }
+            });
+        };
+
+        processGroup(units.flatMap(u => u.members), 'Unité');
+        processGroup(committees.flatMap(c => c.members), 'Comité');
+
+        return all
+            .filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase()))
+            .sort((a, b) => (b.lastTime || 0) - (a.lastTime || 0));
+    }, [units, committees, currentUserId, searchTerm, messages]);
 
     // Derived Messages for current view
     const visibleMessages = useMemo(() => {
@@ -164,46 +180,83 @@ const CommunityChat: React.FC = () => {
         <div className="flex bg-white rounded-3xl shadow-2xl border border-slate-100 h-[85vh] max-w-5xl mx-auto overflow-hidden animate-in fade-in zoom-in duration-300">
             {/* Sidebar */}
             <div className={`${showSidebar ? 'w-80' : 'w-0'} border-r border-slate-50 transition-all duration-300 flex flex-col bg-slate-50/30 overflow-hidden`}>
-                <div className="p-6">
-                    <h3 className="font-black text-slate-800 text-xl mb-4">Contacts</h3>
-                    <div className="relative">
+                {/* Contacts Search & Filters */}
+                <div className="p-4 bg-white/50 border-b border-slate-100">
+                    <div className="flex items-center gap-2 mb-4">
+                        <h3 className="font-black text-slate-800 text-xl flex-1">Discussions</h3>
+                        <div className="flex gap-1">
+                            <button className="p-2 hover:bg-white rounded-lg text-slate-400"><MessageCircle size={18} /></button>
+                            <button className="p-2 hover:bg-white rounded-lg text-slate-400" onClick={handleResetIdentity}><RefreshCcw size={18} /></button>
+                        </div>
+                    </div>
+                    <div className="relative mb-4">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                         <input
                             type="text"
-                            placeholder="Rechercher..."
-                            className="w-full bg-white border border-slate-100 rounded-xl pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-indigo-100 outline-none"
+                            placeholder="Rechercher ou démarrer une discussion"
+                            className="w-full bg-slate-100 border-none rounded-xl pl-10 pr-4 py-2 text-sm outline-none focus:ring-1 focus:ring-emerald-500"
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
                         />
                     </div>
+                    <div className="flex gap-2">
+                        <button className="px-4 py-1.5 bg-emerald-100 text-emerald-700 text-[10px] font-black rounded-full uppercase tracking-wider">Toutes</button>
+                        <button className="px-4 py-1.5 bg-slate-100 text-slate-500 text-[10px] font-black rounded-full uppercase tracking-wider">Non lues</button>
+                    </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-1">
+                <div className="flex-1 overflow-y-auto bg-white">
                     <button
                         onClick={() => setRecipient(null)}
-                        className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-all ${!recipient ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' : 'hover:bg-white text-slate-600'}`}
+                        className={`w-full flex items-center gap-4 p-4 transition-all border-b border-slate-50 ${!recipient ? 'bg-slate-100' : 'hover:bg-slate-50'}`}
                     >
-                        <Users size={20} />
-                        <div className="text-left">
-                            <div className="font-bold text-sm">Tout le monde</div>
-                            <div className={`text-[10px] ${!recipient ? 'text-indigo-100' : 'text-slate-400'}`}>Chat public</div>
+                        <div className="relative flex-shrink-0">
+                            <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm ${!recipient ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-500'}`}>
+                                <Users size={20} />
+                            </div>
+                            <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full"></div>
+                        </div>
+                        <div className="text-left flex-1 min-w-0">
+                            <div className="flex justify-between items-center mb-0.5">
+                                <div className="font-bold text-slate-800 truncate">Tout le monde</div>
+                                {messages.filter(m => !m.recipientId || m.recipientId === 'ALL').sort((a, b) => b.timestamp - a.timestamp)[0]?.timestamp && (
+                                    <div className="text-[10px] text-slate-400">
+                                        {new Date(messages.filter(m => !m.recipientId || m.recipientId === 'ALL').sort((a, b) => b.timestamp - a.timestamp)[0].timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    </div>
+                                )}
+                            </div>
+                            <div className="flex items-center gap-1">
+                                <div className="text-[11px] text-slate-400 truncate flex-1 leading-none">
+                                    {messages.filter(m => !m.recipientId || m.recipientId === 'ALL').sort((a, b) => b.timestamp - a.timestamp)[0]?.text || 'Chat public'}
+                                </div>
+                            </div>
                         </div>
                     </button>
-
-                    <div className="py-4 px-2 uppercase text-[10px] font-black text-slate-400 tracking-widest">Collaborateurs</div>
 
                     {contacts.map(c => (
                         <button
                             key={c.id}
                             onClick={() => setRecipient({ id: c.id, name: c.name })}
-                            className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-all ${recipient?.id === c.id ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' : 'hover:bg-white text-slate-600'}`}
+                            className={`w-full flex items-center gap-4 p-4 transition-all border-b border-slate-50 ${recipient?.id === c.id ? 'bg-slate-100' : 'hover:bg-slate-50'}`}
                         >
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs ${recipient?.id === c.id ? 'bg-indigo-500' : 'bg-slate-200 text-slate-500'}`}>
-                                {c.name.charAt(0)}
+                            <div className="relative flex-shrink-0">
+                                <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm ${recipient?.id === c.id ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-500'}`}>
+                                    {c.name.charAt(0)}
+                                </div>
+                                <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full"></div>
                             </div>
                             <div className="text-left flex-1 min-w-0">
-                                <div className="font-bold text-sm truncate">{c.name}</div>
-                                <div className={`text-[10px] truncate ${recipient?.id === c.id ? 'text-indigo-100' : 'text-slate-400'}`}>{c.type}</div>
+                                <div className="flex justify-between items-center mb-0.5">
+                                    <div className="font-bold text-slate-800 truncate">{c.name}</div>
+                                    {c.lastTime && (
+                                        <div className="text-[10px] text-slate-400">
+                                            {new Date(c.lastTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="flex items-center gap-1">
+                                    <div className="text-[11px] text-slate-400 truncate flex-1 leading-none">{c.lastMessage || c.type}</div>
+                                </div>
                             </div>
                         </button>
                     ))}
@@ -211,43 +264,42 @@ const CommunityChat: React.FC = () => {
             </div>
 
             {/* Chat Area */}
-            <div className="flex-1 flex flex-col bg-white overflow-hidden relative">
-                {/* Header */}
-                <div className="p-6 border-b border-slate-50 flex items-center justify-between bg-white/80 backdrop-blur-md z-10 sticky top-0">
-                    <div className="flex items-center gap-4">
+            <div className="flex-1 flex flex-col bg-[#efeae2] overflow-hidden relative">
+                {/* Header Style WhatsApp */}
+                <div className="px-4 py-2 border-b border-slate-200 flex items-center justify-between bg-slate-50/95 backdrop-blur-md z-10">
+                    <div className="flex items-center gap-3">
                         <button onClick={() => setShowSidebar(!showSidebar)} className="p-2 hover:bg-slate-50 rounded-xl lg:hidden">
-                            <Users size={20} className="text-slate-400" />
+                            <ChevronRight size={20} className="text-slate-400" />
                         </button>
-                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${recipient ? 'bg-indigo-100 text-indigo-600' : 'bg-amber-100 text-amber-600'}`}>
-                            {recipient ? <User size={24} /> : <Users size={24} />}
+                        <div className="relative">
+                            <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 overflow-hidden">
+                                {recipient ? recipient.name.charAt(0) : <Users size={20} />}
+                            </div>
+                            <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full"></div>
                         </div>
-                        <div>
+                        <div className="leading-tight">
                             <div className="flex items-center gap-2">
-                                <h2 className="font-bold text-slate-800 text-lg leading-tight">
-                                    {recipient ? recipient.name : 'Chat Communautaire'}
+                                <h2 className="font-bold text-slate-800 text-[15px]">
+                                    {recipient ? recipient.name : 'Groupe Public'}
                                 </h2>
-                                <span className="text-[10px] text-slate-300 font-mono">v2.3</span>
-                                <button
-                                    onClick={handleResetIdentity}
-                                    title="Changer d'identité / Réinitialiser"
-                                    className="p-1 hover:bg-slate-50 rounded text-slate-300 hover:text-rose-500 transition-colors"
-                                >
-                                    <RefreshCcw size={10} />
-                                </button>
+                                <span className="text-[10px] text-slate-300 font-mono">v3.0</span>
                                 {recipient && (
-                                    <span className="bg-rose-100 text-rose-600 text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider animate-pulse">
+                                    <span className="bg-emerald-100 text-emerald-600 text-[9px] font-black px-1.5 py-0.5 rounded-sm uppercase tracking-wider">
                                         Privé
                                     </span>
                                 )}
                             </div>
-                            <p className="text-xs text-slate-400 flex items-center gap-1">
-                                <span className={`w-2 h-2 rounded-full ${recipient ? 'bg-indigo-400' : 'bg-green-400'}`}></span>
-                                {recipient ? 'Discussion 1-à-1 sécurisée' : 'Public - Tous les membres'}
+                            <p className="text-[11px] text-slate-400">
+                                {recipient ? 'en ligne aujourd\'hui' : 'Public - Tous les membres'}
                             </p>
                         </div>
                     </div>
+                    <div className="flex items-center gap-5 text-slate-500 pr-2">
+                        <button className="p-2 hover:bg-slate-100 rounded-full cursor-not-allowed opacity-40"><Phone size={20} /></button>
+                        <button className="p-2 hover:bg-slate-100 rounded-full cursor-not-allowed opacity-40"><Video size={20} /></button>
+                        <button className="p-2 hover:bg-slate-100 rounded-full cursor-not-allowed opacity-40"><Smile size={20} /></button>
+                    </div>
                 </div>
-
                 {/* Messages Container */}
                 <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide">
                     {visibleMessages.length === 0 ? (
@@ -263,41 +315,46 @@ const CommunityChat: React.FC = () => {
                             if (m.deleted) return null;
 
                             return (
-                                <div key={m.id} className={`flex gap-3 group ${isMe ? 'flex-row' : 'flex-row-reverse'}`}>
-                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black shadow-sm flex-shrink-0 mt-1 ${isMe ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-400'}`}>
-                                        {m.senderName?.charAt(0) || 'U'}
-                                    </div>
-                                    <div className={`flex flex-col max-w-[70%] ${isMe ? 'items-start' : 'items-end'}`}>
-                                        <div className={`relative px-4 py-3 rounded-2xl shadow-sm transition-all group-hover:shadow-md ${isMe
-                                            ? 'bg-indigo-600 text-white rounded-tl-none'
-                                            : 'bg-slate-100 text-slate-700 rounded-tr-none border border-slate-200'
-                                            }`}>
-                                            {m.type === 'audio' ? (
-                                                <div className="flex items-center gap-3 min-w-[200px]">
-                                                    <div className={`p-2 rounded-full ${isMe ? 'bg-indigo-500' : 'bg-white'}`}>
-                                                        <Play size={16} className={isMe ? 'text-white' : 'text-indigo-600'} />
-                                                    </div>
-                                                    <audio controls className="h-8 max-w-[150px] brightness-110 contrast-125" src={m.audioUrl}></audio>
-                                                </div>
-                                            ) : (
-                                                <div className="text-sm whitespace-pre-wrap leading-relaxed">{m.text}</div>
-                                            )}
+                                <div key={m.id} className={`flex group ${isMe ? 'justify-end' : 'justify-start'}`}>
+                                    <div className={`relative max-w-[80%] px-3 py-2 rounded-lg shadow-sm ${isMe
+                                        ? 'bg-[#dcf8c6] rounded-br-none'
+                                        : 'bg-white rounded-bl-none border border-slate-100'
+                                        }`}>
+                                        {!isMe && !recipient && (
+                                            <div className="text-[10px] font-bold text-emerald-600 mb-1 leading-none uppercase">{m.senderName}</div>
+                                        )}
 
-                                            {isMe && (
-                                                <button
-                                                    onClick={() => handleDelete(m.id)}
-                                                    className={`absolute ${isMe ? '-right-10' : '-left-10'} top-1/2 -translate-y-1/2 p-2 text-slate-400 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all`}
-                                                >
-                                                    <Trash2 size={18} />
-                                                </button>
-                                            )}
-                                        </div>
-                                        <div className={`flex items-center gap-2 mt-1.5 px-1 ${isMe ? 'flex-row' : 'flex-row-reverse'}`}>
-                                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-tight">{m.senderName}</span>
-                                            <span className="text-[9px] text-slate-400 font-medium opacity-60">
+                                        {m.type === 'audio' ? (
+                                            <div className="flex items-center gap-2 min-w-[200px] py-1">
+                                                <div className={`p-1.5 rounded-full ${isMe ? 'bg-emerald-50' : 'bg-slate-100'}`}>
+                                                    <Play size={14} className="text-emerald-600" />
+                                                </div>
+                                                <audio controls className="h-6 max-w-[140px] opacity-70" src={m.audioUrl}></audio>
+                                            </div>
+                                        ) : (
+                                            <div className="text-[14px] whitespace-pre-wrap leading-tight text-slate-800">{m.text}</div>
+                                        )}
+
+                                        <div className="flex items-center justify-end gap-1 mt-1 leading-none">
+                                            <span className="text-[9px] text-slate-400 font-medium">
                                                 {new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                             </span>
+                                            {isMe && (
+                                                <div className="flex leading-none text-emerald-500">
+                                                    <span className="text-[8px]">✓</span>
+                                                    <span className="text-[8px] -ml-1">✓</span>
+                                                </div>
+                                            )}
                                         </div>
+
+                                        {isMe && (
+                                            <button
+                                                onClick={() => handleDelete(m.id)}
+                                                className={`absolute ${isMe ? '-left-8' : '-right-8'} top-1/2 -translate-y-1/2 p-2 text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all`}
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             );
@@ -306,40 +363,31 @@ const CommunityChat: React.FC = () => {
                     <div ref={chatEndRef} />
                 </div>
 
-                {/* Input Area */}
-                <div className="p-6 bg-white border-t border-slate-50">
-                    {recipient && (
-                        <div className="mb-3 px-3 py-1.5 bg-indigo-50 border border-indigo-100 rounded-lg flex items-center justify-between">
-                            <span className="text-[10px] font-bold text-indigo-600 flex items-center gap-1">
-                                <Shield size={10} /> Message privé pour {recipient.name}
-                            </span>
-                            <button onClick={() => setRecipient(null)} className="text-indigo-400 hover:text-indigo-600">
-                                <X size={12} />
-                            </button>
-                        </div>
-                    )}
+                {/* Input WhatsApp */}
+                <div className="px-4 py-3 bg-slate-50 flex items-center gap-3 border-t border-slate-200">
+                    <div className="flex gap-2 text-slate-500">
+                        <button className="p-2 hover:bg-slate-200 rounded-full"><Smile size={24} /></button>
+                        <div className="p-2 hover:bg-slate-200 rounded-full cursor-not-allowed opacity-40 leading-none text-2xl font-light">+</div>
+                    </div>
 
-                    <div className="flex items-center gap-3 bg-slate-50 p-2 rounded-3xl border border-slate-100 focus-within:ring-4 focus-within:ring-indigo-50/50 transition-all">
-                        <button className="p-3 text-slate-400 hover:text-indigo-600 transition-colors">
-                            <Smile size={24} />
-                        </button>
-
+                    <div className="flex-1 relative">
                         <input
                             type="text"
-                            className="flex-1 bg-transparent border-none px-2 py-3 text-sm focus:ring-0 outline-none text-slate-700"
-                            placeholder={isRecording ? "Enregistrement en cours..." : "Écrivez votre message..."}
+                            placeholder="Taper un message"
+                            className="w-full bg-white border-none rounded-2xl px-4 py-2.5 text-[15px] outline-none shadow-sm focus:ring-1 focus:ring-emerald-500"
                             value={input}
-                            onChange={e => setInput(e.target.value)}
-                            onKeyDown={e => e.key === 'Enter' && sendMessage()}
-                            disabled={isRecording}
+                            onChange={(e) => setInput(e.target.value)}
+                            onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
                         />
+                    </div>
 
+                    <div className="flex items-center gap-1">
                         {input.trim() ? (
                             <button
-                                onClick={() => sendMessage('text')}
-                                className="bg-indigo-600 text-white p-3 rounded-2xl hover:bg-indigo-700 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-indigo-200"
+                                onClick={() => sendMessage()}
+                                className="w-11 h-11 bg-emerald-500 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-emerald-600 transition-all"
                             >
-                                <Send size={20} />
+                                <Send size={20} className="ml-0.5" />
                             </button>
                         ) : (
                             <button
@@ -347,14 +395,14 @@ const CommunityChat: React.FC = () => {
                                 onMouseUp={stopRecording}
                                 onTouchStart={startRecording}
                                 onTouchEnd={stopRecording}
-                                className={`p-4 rounded-2xl transition-all ${isRecording ? 'bg-rose-500 text-white animate-pulse' : 'bg-slate-200 text-slate-500 hover:bg-slate-300'}`}
+                                className={`w-11 h-11 ${isRecording ? 'bg-rose-500 animate-pulse' : 'bg-emerald-500'} text-white rounded-full flex items-center justify-center shadow-lg hover:bg-emerald-600 transition-all`}
                             >
-                                {isRecording ? <Square size={20} /> : <Mic size={20} />}
+                                {isRecording ? <Square size={18} fill="white" /> : <Mic size={20} />}
                             </button>
                         )}
                     </div>
-                    {isRecording && <p className="text-center text-[10px] text-rose-500 font-bold mt-2 animate-bounce">Relâchez pour envoyer</p>}
                 </div>
+                {isRecording && <p className="text-center text-[10px] text-rose-500 font-bold mt-2 animate-bounce">Relâchez pour envoyer</p>}
             </div>
         </div>
     );
