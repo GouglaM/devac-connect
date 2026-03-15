@@ -1668,56 +1668,74 @@ const UnitDetails: React.FC<UnitDetailsProps> = ({ unit, onBack, onUpdate, isAdm
                                         )}
                                     </div>
                                 ) : (
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full text-left min-w-[1400px] border-collapse">
+                                    <div className="overflow-x-auto p-4 bg-white">
+                                        <div className="text-center mb-8 space-y-1">
+                                            <div className="text-sm font-medium tracking-[0.3em] text-slate-500 uppercase">DEVAC CONNECT</div>
+                                            <div className="text-lg font-black text-[#1E4DA1] uppercase tracking-widest border-b-2 border-[#1E4DA1] inline-block px-8 pb-1">
+                                                ACTIVITY_GRID - {unit.name}/ ACTIVITE N {unit.activityReports?.length || 1}
+                                            </div>
+                                        </div>
+                                        <table className="w-full text-left min-w-[1400px] border-collapse border-2 border-[#1E4DA1]">
                                             <thead>
-                                                <tr className="bg-slate-50 text-slate-500 text-[10px] font-black uppercase tracking-widest text-center">
-                                                    <th rowSpan={2} className="px-5 py-6 border-b border-slate-100">DATES</th>
-                                                    <th rowSpan={2} className="px-5 py-6 border-b border-slate-100">ACTIVITES</th>
-                                                    <th rowSpan={2} className="px-5 py-6 border-b border-slate-100">OBJECTIFS VISÉS</th>
-                                                    <th rowSpan={2} className="px-5 py-6 border-b border-slate-100">INDICATEURS</th>
-                                                    <th rowSpan={2} className="px-5 py-6 border-b border-slate-100">RÉSULTATS REELS</th>
-                                                    <th rowSpan={2} className="px-5 py-6 border-b border-slate-100">PRODUIT</th>
-                                                    <th colSpan={2} className="px-5 py-4 border-b border-slate-100 bg-slate-100/30">RESSOURCES</th>
-                                                    <th rowSpan={2} className="px-5 py-6 border-b border-slate-100">OBSERVATIONS</th>
-                                                    {isEditing && <th rowSpan={2} className="px-5 py-6 border-b border-slate-100"></th>}
+                                                <tr className="bg-[#1E4DA1] text-white text-[10px] font-black uppercase tracking-widest text-center">
+                                                    <th rowSpan={2} className="px-5 py-6 border border-white/20">DATES</th>
+                                                    <th rowSpan={2} className="px-5 py-6 border border-white/20">ACTIVITES</th>
+                                                    <th rowSpan={2} className="px-5 py-6 border border-white/20">
+                                                        RESULTATS ATTENDUS<br />
+                                                        <span className="text-[#ff4d4d] normal-case font-bold">(Objectif visé)</span>
+                                                    </th>
+                                                    <th rowSpan={2} className="px-5 py-6 border border-white/20">
+                                                        INDICATEURS<br />
+                                                        <span className="text-[#ff4d4d] normal-case font-bold">(Fait observable...)</span>
+                                                    </th>
+                                                    <th rowSpan={2} className="px-5 py-6 border border-white/20">
+                                                        RESULTATS OBTENUS<br />
+                                                        <span className="text-[#ff4d4d] normal-case font-bold">(Ce qui a été réellement fait)</span>
+                                                    </th>
+                                                    <th rowSpan={2} className="px-5 py-6 border border-white/20">
+                                                        PRODUIT<br />
+                                                        <span className="text-[#ff4d4d] normal-case font-bold">(Personnes gagnées...)</span>
+                                                    </th>
+                                                    <th colSpan={2} className="px-5 py-4 border border-white/20">RESSOURCES</th>
+                                                    <th rowSpan={2} className="px-5 py-6 border border-white/20">OBSERVATIONS</th>
+                                                    {isEditing && <th rowSpan={2} className="px-5 py-6 border border-white/20"></th>}
                                                 </tr>
-                                                <tr className="bg-slate-50 text-slate-500 text-[9px] font-black uppercase tracking-widest text-center">
-                                                    <th className="px-5 py-3 border-b border-slate-100 border-l border-slate-100">HUMAINES</th>
-                                                    <th className="px-5 py-3 border-b border-slate-100">FINANCIERES</th>
+                                                <tr className="bg-[#1E4DA1] text-white text-[9px] font-black uppercase tracking-widest text-center">
+                                                    <th className="px-5 py-3 border border-white/20 text-[#ff4d4d] normal-case font-bold">HUMAINES (Participants)</th>
+                                                    <th className="px-5 py-3 border border-white/20 text-[#ff4d4d] normal-case font-bold">FINANCIERES (Coût réel)</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-slate-100 text-center text-[11px] font-medium text-slate-700">
                                                 {(isEditing ? localActivityReports : (unit.activityReports || [])).map((r: any) => (
-                                                    <tr key={r.id} className="hover:bg-indigo-50/30 transition-colors">
-                                                        <td className="px-4 py-5 font-black text-indigo-600 whitespace-nowrap">
+                                                    <tr key={r.id} className="hover:bg-indigo-50/30 transition-colors border-b border-slate-200">
+                                                        <td className="px-4 py-5 font-black text-indigo-600 whitespace-nowrap border-x border-slate-100">
                                                             {isEditing ? <input value={r.date} type="date" onChange={e => setLocalActivityReports(prev => prev.map(i => i.id === r.id ? { ...i, date: e.target.value } : i))} className="w-full bg-white border border-slate-200 p-2 rounded-lg text-[10px]" /> : r.date}
                                                         </td>
-                                                        <td className="px-4 py-5 font-black text-slate-800 text-left min-w-[300px]">
+                                                        <td className="px-4 py-5 font-black text-slate-800 text-left min-w-[300px] border-r border-slate-100">
                                                             {isEditing ? <RichTextEditor value={r.activity} onChange={content => setLocalActivityReports(prev => prev.map(i => i.id === r.id ? { ...i, activity: content } : i))} /> : <div dangerouslySetInnerHTML={{ __html: r.activity }} />}
                                                         </td>
-                                                        <td className="px-4 py-5 text-left leading-relaxed min-w-[300px] text-slate-500">
+                                                        <td className="px-4 py-5 text-left leading-relaxed min-w-[300px] text-slate-500 border-r border-slate-100">
                                                             {isEditing ? <RichTextEditor value={r.expectedResults} onChange={content => setLocalActivityReports(prev => prev.map(i => i.id === r.id ? { ...i, expectedResults: content } : i))} /> : <div dangerouslySetInnerHTML={{ __html: r.expectedResults }} />}
                                                         </td>
-                                                        <td className="px-4 py-5 text-left leading-relaxed min-w-[300px] text-slate-500">
+                                                        <td className="px-4 py-5 text-left leading-relaxed min-w-[300px] text-slate-500 border-r border-slate-100">
                                                             {isEditing ? <RichTextEditor value={r.indicators} onChange={content => setLocalActivityReports(prev => prev.map(i => i.id === r.id ? { ...i, indicators: content } : i))} /> : <div dangerouslySetInnerHTML={{ __html: r.indicators }} />}
                                                         </td>
-                                                        <td className="px-4 py-5 text-left leading-relaxed min-w-[300px] text-slate-500 border-r border-slate-50">
+                                                        <td className="px-4 py-5 text-left leading-relaxed min-w-[300px] text-slate-500 border-r border-slate-100">
                                                             {isEditing ? <RichTextEditor value={r.obtainedResults} onChange={content => setLocalActivityReports(prev => prev.map(i => i.id === r.id ? { ...i, obtainedResults: content } : i))} /> : <div dangerouslySetInnerHTML={{ __html: r.obtainedResults }} />}
                                                         </td>
-                                                        <td className="px-4 py-5 font-black text-slate-800">
+                                                        <td className="px-4 py-5 font-black text-slate-800 border-r border-slate-100">
                                                             {isEditing ? <input value={r.product} type="number" onChange={e => setLocalActivityReports(prev => prev.map(i => i.id === r.id ? { ...i, product: e.target.value } : i))} className="w-full bg-white border border-slate-200 p-2 rounded-lg text-center" /> : r.product}
                                                         </td>
-                                                        <td className="px-4 py-5 font-black text-slate-800 bg-slate-50/30">
+                                                        <td className="px-4 py-5 font-black text-slate-800 bg-slate-50/10 border-r border-slate-100">
                                                             {isEditing ? <input value={r.humanResources} type="number" onChange={e => setLocalActivityReports(prev => prev.map(i => i.id === r.id ? { ...i, humanResources: e.target.value } : i))} className="w-full bg-white border border-slate-200 p-2 rounded-lg text-center" /> : r.humanResources}
                                                         </td>
-                                                        <td className="px-4 py-5 font-black text-indigo-600 bg-slate-50/30">
+                                                        <td className="px-4 py-5 font-black text-indigo-600 bg-slate-50/10 border-r border-slate-100">
                                                             {isEditing ? <input value={r.financialResources} type="number" onChange={e => setLocalActivityReports(prev => prev.map(i => i.id === r.id ? { ...i, financialResources: e.target.value } : i))} className="w-full bg-white border border-slate-200 p-2 rounded-lg text-center" /> : (parseInt(r.financialResources || '0')).toLocaleString()}
                                                         </td>
-                                                        <td className="px-4 py-5 text-left italic text-slate-400 min-w-[300px]">
+                                                        <td className="px-4 py-5 text-left italic text-slate-400 min-w-[300px] border-r border-slate-100">
                                                             {isEditing ? <RichTextEditor value={r.observations} onChange={content => setLocalActivityReports(prev => prev.map(i => i.id === r.id ? { ...i, observations: content } : i))} /> : <div className="quill-content" dangerouslySetInnerHTML={{ __html: r.observations }} />}
                                                         </td>
-                                                        {isEditing && <td className="px-4 py-5"><button onClick={() => removeItem('ACTIVITY_GRID', r.id)} className="text-slate-300 hover:text-red-500 transition-colors"><Trash2 size={18} /></button></td>}
+                                                        {isEditing && <td className="px-4 py-5 border-r border-slate-100"><button onClick={() => removeItem('ACTIVITY_GRID', r.id)} className="text-slate-300 hover:text-red-500 transition-colors"><Trash2 size={18} /></button></td>}
                                                     </tr>
                                                 ))}
                                             </tbody>
