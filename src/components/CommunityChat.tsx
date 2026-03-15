@@ -14,37 +14,42 @@ const CommunityChat: React.FC = () => {
     const [isRecording, setIsRecording] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [showSidebar, setShowSidebar] = useState(true);
+    const [showIdentModal, setShowIdentModal] = useState(false);
+    const [tempNick, setTempNick] = useState('');
 
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const audioChunksRef = useRef<Blob[]>([]);
     const chatEndRef = useRef<HTMLDivElement>(null);
 
-    // Initialize User
+    // Initialize User logic
     useEffect(() => {
         if (!currentUserId && units.length > 0) {
-            const prompted = prompt("Entrez votre nom complet pour le chat (ex: MARCELLO) :");
-            if (prompted) {
-                const normalizedNick = prompted.trim().toUpperCase();
-                let foundId = '';
-
-                // Detect if this is a known member to use their permanent ID
-                units.forEach(u => u.members.forEach(m => {
-                    if (m.name.trim().toUpperCase() === normalizedNick) foundId = m.id;
-                }));
-                if (!foundId) {
-                    committees.forEach(c => c.members.forEach(m => {
-                        if (m.name.trim().toUpperCase() === normalizedNick) foundId = m.id;
-                    }));
-                }
-
-                const newId = foundId || 'u_' + Date.now();
-                setNickname(prompted);
-                setCurrentUserId(newId);
-                localStorage.setItem('chat_nickname_v2', prompted);
-                localStorage.setItem('chat_user_id_v2', newId);
-            }
+            setShowIdentModal(true);
         }
-    }, [currentUserId, units, committees]);
+    }, [currentUserId, units]);
+
+    const handleIdentify = (selectedName: string) => {
+        const normalizedNick = selectedName.trim().toUpperCase();
+        let foundId = '';
+
+        // Detect if this is a known member
+        units.forEach(u => u.members.forEach(m => {
+            if (m.name.trim().toUpperCase() === normalizedNick) foundId = m.id;
+        }));
+        if (!foundId) {
+            committees.forEach(c => c.members.forEach(m => {
+                if (m.name.trim().toUpperCase() === normalizedNick) foundId = m.id;
+            }));
+        }
+
+        const newId = foundId || 'u_' + Date.now();
+        setNickname(selectedName);
+        setCurrentUserId(newId);
+        localStorage.setItem('chat_nickname_v2', selectedName);
+        localStorage.setItem('chat_user_id_v2', newId);
+        setShowIdentModal(false);
+        console.log(`[Chat] Identified as: ${selectedName} (ID: ${newId})`);
+    };
 
     // Subscriptions
     useEffect(() => {
@@ -408,6 +413,48 @@ const CommunityChat: React.FC = () => {
                 </div>
                 {isRecording && <p className="text-center text-[10px] text-rose-500 font-bold mt-2 animate-bounce">Relâchez pour envoyer</p>}
             </div>
+            {/* Identification Modal Overlay */}
+            {showIdentModal && (
+                <div className="absolute inset-0 z-[100] bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
+                    <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl animate-in zoom-in duration-300">
+                        <div className="flex justify-center mb-6">
+                            <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600">
+                                <User size={32} />
+                            </div>
+                        </div>
+                        <h2 className="text-2xl font-black text-slate-800 text-center mb-2">Bienvenue sur le Chat</h2>
+                        <p className="text-slate-500 text-center text-sm mb-8">Veuillez entrer votre nom pour commencer à discuter avec vos collaborateurs.</p>
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-xs font-black text-slate-400 uppercase tracking-wider mb-2">Votre Nom Complet</label>
+                                <input
+                                    type="text"
+                                    value={tempNick}
+                                    onChange={e => setTempNick(e.target.value)}
+                                    placeholder="Ex: MARCELLIN GOUGLA"
+                                    className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-3 outline-none focus:border-emerald-500 transition-all font-bold text-slate-700"
+                                    onKeyPress={e => e.key === 'Enter' && tempNick.trim() && handleIdentify(tempNick)}
+                                />
+                            </div>
+
+                            <button
+                                onClick={() => tempNick.trim() && handleIdentify(tempNick)}
+                                disabled={!tempNick.trim()}
+                                className="w-full bg-emerald-500 text-white font-black py-4 rounded-xl shadow-lg shadow-emerald-200 hover:bg-emerald-600 transition-all disabled:opacity-50 disabled:shadow-none"
+                            >
+                                COMMENCER
+                            </button>
+                        </div>
+
+                        <div className="mt-8 pt-6 border-t border-slate-100">
+                            <p className="text-[10px] text-slate-400 text-center uppercase font-bold tracking-widest leading-loose">
+                                Recommandé : Utilisez votre nom complet tel qu'il figure dans la liste des membres pour retrouver vos conversations privées.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
