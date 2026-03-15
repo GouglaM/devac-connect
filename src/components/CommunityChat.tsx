@@ -99,13 +99,15 @@ const CommunityChat: React.FC = () => {
 
     // Derived Messages for current view
     const visibleMessages = useMemo(() => {
+        const sorted = [...messages].sort((a, b) => a.timestamp - b.timestamp);
         console.log(`[Chat] Recalculating visibleMessages. CurrentUser: ${currentUserId}, Recipient: ${recipient?.id || 'Public'}, Total Messages: ${messages.length}`);
+
         if (!recipient) {
             // Public view: only messages with recipientId === 'ALL' or !recipientId
-            return messages.filter(m => !m.recipientId || m.recipientId === 'ALL');
+            return sorted.filter(m => !m.recipientId || m.recipientId === 'ALL');
         } else {
             // Private view: Only bilateral exchange between ME and HIM
-            const filtered = messages.filter(m =>
+            const filtered = sorted.filter(m =>
                 (m.sender === currentUserId && m.recipientId === recipient.id) ||
                 (m.sender === recipient.id && m.recipientId === currentUserId)
             );
