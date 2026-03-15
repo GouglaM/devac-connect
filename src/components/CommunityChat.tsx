@@ -191,6 +191,7 @@ const CommunityChat: React.FC = () => {
                                 <h2 className="font-bold text-slate-800 text-lg leading-tight">
                                     {recipient ? recipient.name : 'Chat Communautaire'}
                                 </h2>
+                                <span className="text-[10px] text-slate-300 font-mono">v2.0</span>
                                 {recipient && (
                                     <span className="bg-rose-100 text-rose-600 text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider animate-pulse">
                                         Privé
@@ -226,8 +227,8 @@ const CommunityChat: React.FC = () => {
                                     </div>
                                     <div className={`flex flex-col max-w-[70%] ${isMe ? 'items-end' : 'items-start'}`}>
                                         <div className={`relative px-4 py-3 rounded-2xl shadow-sm transition-all group-hover:shadow-md ${isMe
-                                                ? 'bg-indigo-600 text-white rounded-tr-none'
-                                                : 'bg-slate-100 text-slate-700 rounded-tl-none border border-slate-200'
+                                            ? 'bg-indigo-600 text-white rounded-tr-none'
+                                            : 'bg-slate-100 text-slate-700 rounded-tl-none border border-slate-200'
                                             }`}>
                                             {m.type === 'audio' ? (
                                                 <div className="flex items-center gap-3 min-w-[200px]">
