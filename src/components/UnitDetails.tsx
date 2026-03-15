@@ -1670,39 +1670,38 @@ const UnitDetails: React.FC<UnitDetailsProps> = ({ unit, onBack, onUpdate, isAdm
                                 ) : (
                                     <div className="overflow-x-auto p-4 bg-white">
                                         <div className="text-center mb-8 space-y-1">
-                                            <div className="text-sm font-medium tracking-[0.3em] text-slate-500 uppercase">DEVAC CONNECT</div>
-                                            <div className="text-lg font-black text-[#1E4DA1] uppercase tracking-widest border-b-2 border-[#1E4DA1] inline-block px-8 pb-1">
-                                                ACTIVITY_GRID - {unit.name}/ ACTIVITE N {unit.activityReports?.length || 1}
+                                            <div className="text-2xl font-black text-slate-900 uppercase tracking-tight">
+                                                GRILLE DE RAPPORT D’ACTIVITE
                                             </div>
                                         </div>
-                                        <table className="w-full text-left min-w-[1400px] border-collapse border-2 border-[#1E4DA1]">
+                                        <table className="w-full text-left min-w-[1400px] border-collapse border border-slate-900">
                                             <thead>
-                                                <tr className="bg-[#1E4DA1] text-white text-[10px] font-black uppercase tracking-widest text-center">
-                                                    <th rowSpan={2} className="px-5 py-6 border border-white/20">DATES</th>
-                                                    <th rowSpan={2} className="px-5 py-6 border border-white/20">ACTIVITES</th>
-                                                    <th rowSpan={2} className="px-5 py-6 border border-white/20">
+                                                <tr className="bg-white text-slate-900 text-[10px] font-black uppercase tracking-widest text-center">
+                                                    <th rowSpan={2} className="px-5 py-6 border border-slate-900">DATES</th>
+                                                    <th rowSpan={2} className="px-5 py-6 border border-slate-900">ACTIVITES</th>
+                                                    <th rowSpan={2} className="px-5 py-6 border border-slate-900">
                                                         RESULTATS ATTENDUS<br />
-                                                        <span className="text-[#ff4d4d] normal-case font-bold">(Objectif visé)</span>
+                                                        <span className="text-red-600 normal-case font-bold">(Objectif visé)</span>
                                                     </th>
-                                                    <th rowSpan={2} className="px-5 py-6 border border-white/20">
+                                                    <th rowSpan={2} className="px-5 py-6 border border-slate-900">
                                                         INDICATEURS<br />
-                                                        <span className="text-[#ff4d4d] normal-case font-bold">(Fait observable...)</span>
+                                                        <span className="text-red-600 normal-case font-bold">(Fait observable qui prouve que l'activité est faite)</span>
                                                     </th>
-                                                    <th rowSpan={2} className="px-5 py-6 border border-white/20">
+                                                    <th rowSpan={2} className="px-5 py-6 border border-slate-900">
                                                         RESULTATS OBTENUS<br />
-                                                        <span className="text-[#ff4d4d] normal-case font-bold">(Ce qui a été réellement fait)</span>
+                                                        <span className="text-red-600 normal-case font-bold">(Ce qui a été réellement fait)</span>
                                                     </th>
-                                                    <th rowSpan={2} className="px-5 py-6 border border-white/20">
+                                                    <th rowSpan={2} className="px-5 py-6 border border-slate-900">
                                                         PRODUIT<br />
-                                                        <span className="text-[#ff4d4d] normal-case font-bold">(Personnes gagnées...)</span>
+                                                        <span className="text-red-600 normal-case font-bold">(Nombre de personnes gagnées ou ayant entendu l'évangile)</span>
                                                     </th>
-                                                    <th colSpan={2} className="px-5 py-4 border border-white/20">RESSOURCES</th>
-                                                    <th rowSpan={2} className="px-5 py-6 border border-white/20">OBSERVATIONS</th>
-                                                    {isEditing && <th rowSpan={2} className="px-5 py-6 border border-white/20"></th>}
+                                                    <th colSpan={2} className="px-5 py-4 border border-slate-900">RESSOURCES</th>
+                                                    <th rowSpan={2} className="px-5 py-6 border border-slate-900">OBSERVATIONS</th>
+                                                    {isEditing && <th rowSpan={2} className="px-5 py-6 border border-slate-900"></th>}
                                                 </tr>
-                                                <tr className="bg-[#1E4DA1] text-white text-[9px] font-black uppercase tracking-widest text-center">
-                                                    <th className="px-5 py-3 border border-white/20 text-[#ff4d4d] normal-case font-bold">HUMAINES (Participants)</th>
-                                                    <th className="px-5 py-3 border border-white/20 text-[#ff4d4d] normal-case font-bold">FINANCIERES (Coût réel)</th>
+                                                <tr className="bg-white text-slate-900 text-[9px] font-black uppercase tracking-widest text-center">
+                                                    <th className="px-5 py-3 border border-slate-900 text-red-600 normal-case font-bold">HUMAINES<br />(Nombre de participants à l'activité)</th>
+                                                    <th className="px-5 py-3 border border-slate-900 text-red-600 normal-case font-bold">FINANCIERES<br />(Coût réel)</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-slate-100 text-center text-[11px] font-medium text-slate-700">

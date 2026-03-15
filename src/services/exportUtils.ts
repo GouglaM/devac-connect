@@ -16,6 +16,39 @@ const downloadBlob = (blob: Blob, filename: string) => {
     URL.revokeObjectURL(url);
 };
 
+const stripHtml = (html: string) => {
+    if (!html) return '';
+    let result = html
+        .replace(/<li>/gi, '• ')
+        .replace(/<\/li>/gi, '\n')
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<p>/gi, '')
+        .replace(/<\/p>/gi, '\n')
+        .replace(/<div>/gi, '')
+        .replace(/<\/div>/gi, '\n')
+        .replace(/<[^>]+>/g, '');
+
+    // Decode basic HTML entities
+    const entities: Record<string, string> = {
+        '&nbsp;': ' ',
+        '&amp;': '&',
+        '&lt;': '<',
+        '&gt;': '>',
+        '&quot;': '"',
+        '&#39;': "'",
+        '&rsquo;': "'",
+        '&lsquo;': "'",
+        '&ndash;': '-',
+        '&mdash;': '--'
+    };
+
+    Object.keys(entities).forEach(key => {
+        result = result.replace(new RegExp(key, 'g'), entities[key]);
+    });
+
+    return result.trim();
+};
+
 // ========================
 // XLSX EXPORT
 // ========================
@@ -23,7 +56,7 @@ export const exportToXLSX = (data: Record<string, string>[], headers: string[], 
     const ws = XLSX.utils.json_to_sheet(
         data.map(row => {
             const cleanRow: Record<string, string> = {};
-            headers.forEach(h => { cleanRow[h] = row[h] || ''; });
+            headers.forEach(h => { cleanRow[h] = stripHtml(row[h] || ''); });
             return cleanRow;
         }),
         { header: headers }
@@ -41,8 +74,8 @@ export const exportToXLSX = (data: Record<string, string>[], headers: string[], 
 export const exportActivityGridToXLSX = (rows: string[][], filename: string) => {
     const data = [
         ['DATES', 'ACTIVITES', 'RESULTATS ATTENDUS', 'INDICATEURS', 'RESULTATS OBTENUS', 'PRODUIT', 'RESSOURCES', '', 'OBSERVATIONS'],
-        ['', '', '(Objectif visé)', '(Fait observable...)', '(Réellement fait)', '(Nombre...)', 'HUMAINES', 'FINANCIERES', ''],
-        ...rows
+        ['', '', '(Objectif visé)', "(Fait observable qui prouve que l'activité est faite)", '(Ce qui a été réellement fait)', "(Nombre de personnes gagnées ou ayant entendu l'évangile)", "(Nombre de participants à l'activité)", '(Coût réel)', ''],
+        ...rows.map(row => row.map(cell => stripHtml(cell)))
     ];
 
     const ws = XLSX.utils.aoa_to_sheet(data);
@@ -65,7 +98,7 @@ export const exportMissionReportsToXLSX = (rows: string[][], filename: string) =
     const data = [
         ['DATE', 'UNITES', 'CHAMPS DE MISSION', 'ACTIVITES', '', 'RESULTATS ATTENDUS', '', 'RESULTATS OBTENUS', '', 'TX DECISION (%)', 'PRESENTS', 'TX PART. (%)', 'OBSERVATIONS & ECART'],
         ['', '', '', 'PROJETÉES', 'REALISÉES', 'AUDIENCE', 'DECISIONS', 'AUDIENCE', 'DECISIONS', '', '', '', ''],
-        ...rows
+        ...rows.map(row => row.map(cell => stripHtml(cell)))
     ];
 
     const ws = XLSX.utils.aoa_to_sheet(data);
@@ -113,7 +146,7 @@ export const exportToDOCX = async (
         ...rows.map((row, idx) => new TableRow({
             children: row.map((cell, i) => new TableCell({
                 children: [new Paragraph({
-                    children: [new TextRun({ text: cell || '', size: 16 })],
+                    children: [new TextRun({ text: stripHtml(cell || ''), size: 16 })],
                     alignment: i === 0 ? AlignmentType.LEFT : AlignmentType.CENTER,
                 })],
                 shading: { fill: idx % 2 === 0 ? 'F1F5F9' : 'FFFFFF' },
@@ -179,52 +212,64 @@ export const exportActivityGridToDOCX = async (
     filename: string
 ) => {
     const headerRedText = (main: string, sub: string) => [
-        new TextRun({ text: main, bold: true, color: 'FFFFFF', size: 18 }),
+        new TextRun({ text: main, bold: true, color: '000000', size: 18 }),
         new TextRun({ text: '\n' }),
-        new TextRun({ text: sub, bold: true, color: 'FF3333', size: 14 })
+        new TextRun({ text: sub, bold: true, color: 'FF0000', size: 14, italics: true })
     ];
 
     const tableRows = [
         // Row 1: Main Headers
         new TableRow({
             children: [
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'DATES', bold: true, color: 'FFFFFF', size: 18 })], alignment: AlignmentType.CENTER })], shading: { fill: '1E5AA8' }, verticalAlign: VerticalAlign.CENTER, rowSpan: 2 }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'ACTIVITES', bold: true, color: 'FFFFFF', size: 18 })], alignment: AlignmentType.CENTER })], shading: { fill: '1E5AA8' }, verticalAlign: VerticalAlign.CENTER, rowSpan: 2 }),
-                new TableCell({ children: [new Paragraph({ children: headerRedText('RESULTATS ATTENDUS', '(Objectif visé)'), alignment: AlignmentType.CENTER })], shading: { fill: '1E5AA8' }, verticalAlign: VerticalAlign.CENTER, rowSpan: 2 }),
-                new TableCell({ children: [new Paragraph({ children: headerRedText('INDICATEURS', '(Fait observable...)'), alignment: AlignmentType.CENTER })], shading: { fill: '1E5AA8' }, verticalAlign: VerticalAlign.CENTER, rowSpan: 2 }),
-                new TableCell({ children: [new Paragraph({ children: headerRedText('RESULTATS OBTENUS', '(Ce qui a été réellement fait)'), alignment: AlignmentType.CENTER })], shading: { fill: '1E5AA8' }, verticalAlign: VerticalAlign.CENTER, rowSpan: 2 }),
-                new TableCell({ children: [new Paragraph({ children: headerRedText('PRODUIT', '(Personnes gagnées...)'), alignment: AlignmentType.CENTER })], shading: { fill: '1E5AA8' }, verticalAlign: VerticalAlign.CENTER, rowSpan: 2 }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'RESSOURCES', bold: true, color: 'FFFFFF', size: 18 })], alignment: AlignmentType.CENTER })], shading: { fill: '1E5AA8' }, columnSpan: 2 }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'OBSERVATIONS', bold: true, color: 'FFFFFF', size: 18 })], alignment: AlignmentType.CENTER })], shading: { fill: '1E5AA8' }, verticalAlign: VerticalAlign.CENTER, rowSpan: 2 }),
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'DATES', bold: true, color: '000000', size: 18 })], alignment: AlignmentType.CENTER })], verticalAlign: VerticalAlign.CENTER, rowSpan: 2 }),
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'ACTIVITES', bold: true, color: '000000', size: 18 })], alignment: AlignmentType.CENTER })], verticalAlign: VerticalAlign.CENTER, rowSpan: 2 }),
+                new TableCell({ children: [new Paragraph({ children: headerRedText('RESULTATS ATTENDUS', '(Objectif visé)'), alignment: AlignmentType.CENTER })], verticalAlign: VerticalAlign.CENTER, rowSpan: 2 }),
+                new TableCell({ children: [new Paragraph({ children: headerRedText('INDICATEURS', "(Fait observable qui prouve que l'activité est faite)"), alignment: AlignmentType.CENTER })], verticalAlign: VerticalAlign.CENTER, rowSpan: 2 }),
+                new TableCell({ children: [new Paragraph({ children: headerRedText('RESULTATS OBTENUS', '(Ce qui a été réellement fait)'), alignment: AlignmentType.CENTER })], verticalAlign: VerticalAlign.CENTER, rowSpan: 2 }),
+                new TableCell({ children: [new Paragraph({ children: headerRedText('PRODUIT', '(Nombre de personnes gagnées ou ayant entendu l\'évangile)'), alignment: AlignmentType.CENTER })], verticalAlign: VerticalAlign.CENTER, rowSpan: 2 }),
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'RESSOURCES', bold: true, color: '000000', size: 18 })], alignment: AlignmentType.CENTER })], columnSpan: 2 }),
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'OBSERVATIONS', bold: true, color: '000000', size: 18 })], alignment: AlignmentType.CENTER })], verticalAlign: VerticalAlign.CENTER, rowSpan: 2 }),
             ]
         }),
         // Row 2: Sub Headers
         new TableRow({
             children: [
-                new TableCell({ children: [new Paragraph({ children: headerRedText('HUMAINES', '(Participants)'), alignment: AlignmentType.CENTER })], shading: { fill: '1E5AA8' } }),
-                new TableCell({ children: [new Paragraph({ children: headerRedText('FINANCIERES', '(Coût réel)'), alignment: AlignmentType.CENTER })], shading: { fill: '1E5AA8' } }),
+                new TableCell({ children: [new Paragraph({ children: headerRedText('HUMAINES', '(Nombre de participants à l\'activité)'), alignment: AlignmentType.CENTER })] }),
+                new TableCell({ children: [new Paragraph({ children: headerRedText('FINANCIERES', '(Coût réel)'), alignment: AlignmentType.CENTER })] }),
             ]
         }),
         // Data Rows
         ...rows.map((row, idx) => new TableRow({
-            children: row.map((cell, i) => new TableCell({
-                children: [new Paragraph({
-                    children: [new TextRun({ text: cell || '', size: 16 })],
-                    alignment: i < 2 ? AlignmentType.LEFT : AlignmentType.CENTER,
-                })],
-                shading: { fill: idx % 2 === 0 ? 'F1F5F9' : 'FFFFFF' },
-            })),
+            children: row.map((cell, i) => {
+                const cleanText = stripHtml(cell || '');
+                const lines = cleanText.split('\n').filter(l => l.trim() !== '');
+                return new TableCell({
+                    children: lines.map(line => new Paragraph({
+                        children: [new TextRun({ text: line, size: 16 })],
+                        alignment: i < 2 ? AlignmentType.LEFT : AlignmentType.CENTER,
+                        spacing: { before: 80, after: 80 }
+                    })),
+                    shading: { fill: idx % 2 === 0 ? 'F9FAFB' : 'FFFFFF' },
+                    verticalAlign: VerticalAlign.CENTER
+                });
+            }),
         })),
     ];
 
     const doc = new Document({
         sections: [{
-            properties: { page: { size: { orientation: PageOrientation.LANDSCAPE } } },
+            properties: { page: { size: { orientation: PageOrientation.LANDSCAPE }, margin: { top: 720, right: 720, bottom: 720, left: 720 } } },
             children: [
-                new Paragraph({ text: 'DEVAC CONNECT', heading: HeadingLevel.TITLE, alignment: AlignmentType.CENTER }),
-                new Paragraph({ text: title, heading: HeadingLevel.HEADING_1, alignment: AlignmentType.CENTER }),
-                new Paragraph({ text: '' }),
-                new Table({ rows: tableRows, width: { size: 100, type: WidthType.PERCENTAGE } })
+                new Paragraph({
+                    text: 'GRILLE DE RAPPORT D’ACTIVITE',
+                    heading: HeadingLevel.HEADING_1,
+                    alignment: AlignmentType.CENTER,
+                    spacing: { after: 400 }
+                }),
+                new Table({
+                    rows: tableRows,
+                    width: { size: 100, type: WidthType.PERCENTAGE }
+                })
             ]
         }],
     });
@@ -267,7 +312,7 @@ export const exportMissionReportsToDOCX = async (
     const dataRows = rows.map((row, idx) => new TableRow({
         children: row.map((cell, i) => new TableCell({
             children: [new Paragraph({
-                children: [new TextRun({ text: cell || '', size: 16 })],
+                children: [new TextRun({ text: stripHtml(cell || ''), size: 16 })],
                 alignment: i < 3 ? AlignmentType.LEFT : AlignmentType.CENTER,
             })],
             shading: { fill: idx % 2 === 0 ? 'F1F5F9' : 'FFFFFF' },
@@ -382,11 +427,13 @@ export const exportToPPTX = (
             });
         });
 
+        const cleanRows = rows.map(row => row.map(cell => stripHtml(cell)));
+
         // Data rows
         chunk.forEach((row, rIdx) => {
             row.forEach((cell, cIdx) => {
                 const isTotal = row[0] === 'TOTAL';
-                slide.addText(cell || '', {
+                slide.addText(stripHtml(cell || ''), {
                     x: 0.3 + cIdx * colW, y: startY + (rIdx + 1) * rowH, w: colW, h: rowH * 0.9,
                     fontSize: isTotal ? 9 : 7.5,
                     color: isTotal ? 'FFFFFF' : '1E293B',
