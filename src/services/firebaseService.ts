@@ -82,10 +82,7 @@ const attemptAnonymousAuth = async (retries = 5, delay = 2000) => {
       console.log(`Retrying in ${delay}ms...`);
       setTimeout(() => attemptAnonymousAuth(retries - 1, delay), delay);
     } else {
-      console.error("🔴 CRITICAL: Anonymous Auth failed after all retries. Please check:");
-      console.error("1. Firebase Console > Authentication > Sign-in method > Anonymous is ENABLED");
-      console.error("2. Network connectivity");
-      console.error("3. Firebase project configuration");
+      console.error("🔴 CRITICAL: Anonymous Auth failed after all retries.");
     }
   }
 };

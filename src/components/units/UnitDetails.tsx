@@ -11,15 +11,15 @@ import {
     TrendingDown, CheckCircle2, History, CreditCard, Receipt, Upload,
     LayoutGrid, List, Zap, Target
 } from 'lucide-react';
-import { EvangelismUnit, Member, ProgrammeItem, ReportItem, OfficeMember, NewSoul, Committee, TreasuryItem, UnitFile, SocialActionRecord, FollowUpLog, Announcement, AnnualReportData, ContributionRecord } from '../types';
-import { db } from '../services/firebaseService';
+import { EvangelismUnit, Member, ProgrammeItem, ReportItem, OfficeMember, NewSoul, Committee, TreasuryItem, UnitFile, SocialActionRecord, FollowUpLog, Announcement, AnnualReportData, ContributionRecord } from '../../types';
+import { db } from '../../services/firebaseService';
 import { doc, updateDoc } from 'firebase/firestore';
-import MemberFormModal from './MemberFormModal';
-import { MemberImportButton } from './MemberImportButton';
-import { ProgramImportButton } from './ProgramImportButton';
-import { generateId } from '../constants';
-import { exportData } from '../services/exportUtils';
-import RichTextEditor from './RichTextEditor';
+import MemberFormModal from '../members/MemberFormModal';
+import { MemberImportButton } from '../members/MemberImportButton';
+import { ProgramImportButton } from '../import/ProgramImportButton';
+import { generateId } from '../../constants';
+import { exportData } from '../../services/exportUtils';
+import RichTextEditor from '../ui/RichTextEditor';
 
 interface UnitDetailsProps {
     unit: EvangelismUnit | Committee;

@@ -9,10 +9,10 @@ import {
     Star, Award, Activity, RefreshCcw, LayoutDashboard, Target, Clock,
     Medal, UserPlus, Zap, FileText, FileType
 } from 'lucide-react';
-import { EvangelismUnit, Committee, AttendanceSession, Member } from '../types';
-import { ADMIN_PASSWORD } from '../constants';
-import { db, addMemberToGroup } from '../services/firebaseService';
-import MemberFormModal from './MemberFormModal';
+import { EvangelismUnit, Committee, AttendanceSession, Member } from '../../types';
+import { ADMIN_PASSWORD } from '../../constants';
+import { db, addMemberToGroup } from '../../services/firebaseService';
+import MemberFormModal from '../members/MemberFormModal';
 
 interface Props {
     units: EvangelismUnit[];

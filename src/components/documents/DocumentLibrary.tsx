@@ -7,9 +7,9 @@ import {
     Send, BrainCircuit, ListChecks, MessageSquareText, HelpCircle, ArrowRight,
     Clipboard, Copy, Check
 } from 'lucide-react';
-import { UnitFile } from '../types';
-import { askBibleAssistant } from '../services/geminiService';
-import { generateId } from '../constants';
+import { UnitFile } from '../../types';
+import { askBibleAssistant } from '../../services/geminiService';
+import { generateId } from '../../constants';
 
 interface Props {
     documents: UnitFile[];

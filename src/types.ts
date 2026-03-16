@@ -220,7 +220,9 @@ export interface AttendanceSession {
   groupId: string;
   date: string;
   attendees: string[];
+  extraAttendees?: string[]; // For manual names
   title?: string;
+  activityType?: string; // e.g. 'prep1', 'prep2' etc.
 }
 
 export interface ChatMessage {

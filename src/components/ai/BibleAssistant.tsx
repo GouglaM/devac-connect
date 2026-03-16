@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Sparkles, MessageSquare, Trash2, X, Mic, MicOff, Paperclip, FileText, FileImage, Loader2, Headphones, Play, Volume2, Mic2 } from 'lucide-react';
-import { askBibleAssistant, generatePodcastDialogue, readAloud } from '../services/geminiService';
-import { Announcement, EvangelismUnit, Committee, AttendanceSession } from '../types';
+import { askBibleAssistant, generatePodcastDialogue, readAloud } from '../../services/geminiService';
+import { Announcement, EvangelismUnit, Committee, AttendanceSession } from '../../types';
 
 interface Message {
     role: 'user' | 'ai';

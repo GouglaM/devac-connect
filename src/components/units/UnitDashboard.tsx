@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 import React, { useState } from 'react';
-import { EvangelismUnit, Committee, ReportItem, Member, ProgrammeItem } from '../types';
+import { EvangelismUnit, Committee, ReportItem, Member, ProgrammeItem } from '../../types';
 import { Users, Calendar, ClipboardList, Book, Save, UserPlus, Trash2, Edit2, ArrowLeft, TrendingUp, CheckCircle2, Phone, Mail, X, Plus, AlertCircle, MapPin, Camera, Upload, Briefcase, Filter, Search, FileDown, FileSpreadsheet, FileText, Printer, PieChart, Coins, MessageCircle, PhoneCall, Video, Wrench, Palette, Truck, BookOpen, HeartHandshake, User } from 'lucide-react';
 
 // Le composant accepte soit une Unité soit un Comité

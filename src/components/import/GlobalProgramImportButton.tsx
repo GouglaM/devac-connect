@@ -1,8 +1,8 @@
 import React, { useRef, useState } from 'react';
 import { FileUp, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import { ProgrammeItem, EvangelismUnit, Committee } from '../types';
-import { updateUnitInDB, updateCommitteeInDB } from '../services/firebaseService';
+import { ProgrammeItem, EvangelismUnit, Committee } from '../../types';
+import { updateUnitInDB, updateCommitteeInDB } from '../../services/firebaseService';
 
 interface GlobalProgramImportButtonProps {
     units: EvangelismUnit[];

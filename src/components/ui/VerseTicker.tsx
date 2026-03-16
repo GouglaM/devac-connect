@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BIBLICAL_VERSES } from '../constants';
+import { BIBLICAL_VERSES } from '../../constants';
 import { Book, Headphones, Loader2 } from 'lucide-react';
 
 interface Props {

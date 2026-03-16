@@ -1,5 +1,5 @@
 import React from 'react';
-import { PRAYER_TOPICS } from '../constants';
+import { PRAYER_TOPICS } from '../../constants';
 import { Heart, Headphones } from 'lucide-react';
 
 interface Props {

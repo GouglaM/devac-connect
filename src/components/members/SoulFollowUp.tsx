@@ -4,8 +4,8 @@ import {
     Calendar, TrendingUp, Filter, ChevronRight, MessageSquare,
     UserCheck, Clock, ShieldAlert, Heart, LayoutGrid, Download, Printer, Landmark
 } from 'lucide-react';
-import { NewSoul, EvangelismUnit, Committee, FollowUpLog } from '../types';
-import { generateId } from '../constants';
+import { NewSoul, EvangelismUnit, Committee, FollowUpLog } from '../../types';
+import { generateId } from '../../constants';
 
 interface SoulFollowUpProps {
     units: EvangelismUnit[];

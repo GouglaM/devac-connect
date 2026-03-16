@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { ADMIN_PASSWORD, generateId } from '../constants';
 import { Announcement } from '../types';
 import { Lock, Unlock, Plus, X, Megaphone, Mic, MicOff, StopCircle, Loader2, Image, Upload, Trash2, Settings, ChevronDown, ChevronUp, PenTool, LayoutTemplate, Paperclip, Palette, Eye, EyeOff, CheckCircle2, Database, RefreshCw, FileUp } from 'lucide-react';
-import CreativeStudio from './CreativeStudio';
+import CreativeStudio from '../components/ai/CreativeStudio';
 import { seedDatabase, importMembersFromCSV } from '../services/dataService';
 
 interface AdminPanelProps {

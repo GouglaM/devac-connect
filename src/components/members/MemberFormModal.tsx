@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, User, Phone, Briefcase, MapPin, Mail, Save, UserPlus, Camera } from 'lucide-react';
-import { Member } from '../types';
-import { generateId } from '../constants';
+import { Member } from '../../types';
+import { generateId } from '../../constants';
 
 interface MemberFormModalProps {
     isOpen: boolean;

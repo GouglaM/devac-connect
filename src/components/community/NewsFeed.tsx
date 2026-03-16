@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Announcement } from '../types';
+import { Announcement } from '../../types';
 import { Calendar, Filter, AlertCircle, Clock, Search, Newspaper, ChevronDown } from 'lucide-react';
 
 interface NewsFeedProps {

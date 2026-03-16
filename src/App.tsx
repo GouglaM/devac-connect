@@ -17,20 +17,19 @@ import {
 } from './services/dataService';
 import { generateDevotionalPodcast } from './services/geminiService';
 
-import Clock from './components/Clock';
-import VerseTicker from './components/VerseTicker';
-import PrayerFocus from './components/PrayerFocus';
-import AnnouncementBoard from './components/AnnouncementBoard';
-import BibleAssistant from './components/BibleAssistant';
-import AdminPanel from './components/AdminPanel';
-import VoicePlayer from './components/VoicePlayer';
-import CommunityChat from './components/CommunityChat';
-import AttendanceManager from './components/AttendanceManager';
-import UnitDetails from './components/UnitDetails';
-import DocumentLibrary from './components/DocumentLibrary';
-import SoulFollowUp from './components/SoulFollowUp';
-import SyncDebug from './components/SyncDebug';
-import CampaignDashboard from './components/CampaignDashboard';
+import Clock from './components/ui/Clock';
+import VerseTicker from './components/ui/VerseTicker';
+import PrayerFocus from './components/ui/PrayerFocus';
+import AnnouncementBoard from './components/community/AnnouncementBoard';
+import BibleAssistant from './components/ai/BibleAssistant';
+import AdminPanel from './admin/AdminPanel';
+import VoicePlayer from './components/ai/VoicePlayer';
+import CommunityChat from './components/community/CommunityChat';
+import AttendanceManager from './components/units/AttendanceManager';
+import UnitDetails from './components/units/UnitDetails';
+import DocumentLibrary from './components/documents/DocumentLibrary';
+import SoulFollowUp from './components/members/SoulFollowUp';
+import CampaignDashboard from './components/campaign/CampaignDashboard';
 
 import {
   LayoutGrid, Users, ShieldCheck, Database, RefreshCcw, ArrowRight
@@ -350,11 +349,10 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 pb-28">
-      <SyncDebug />
       <header className="bg-[#0f172a] text-white py-3 px-8 sticky top-0 z-50 flex flex-col md:flex-row justify-between items-center shadow-2xl">
         <div className="flex items-center gap-4 mb-4 md:mb-0">
-          <div className="w-12 h-12 rounded-full border-2 border-indigo-500/30 shadow-xl overflow-hidden bg-[#3c3725]">
-            <img src={currentLogo || "https://images.unsplash.com/photo-1635326445353-888915467417?q=80&w=200&auto=format&fit=crop"} alt="Logo" className="w-full h-full object-cover scale-110" />
+          <div className="w-12 h-12 rounded-full border-2 border-indigo-500/30 shadow-xl overflow-hidden bg-slate-800 flex items-center justify-center">
+            <img src={currentLogo || "https://images.unsplash.com/photo-1635326445353-888915467417?q=80&w=200&auto=format&fit=crop"} alt="Logo" className="w-full h-full object-contain" />
           </div>
           <h1 className="text-xl font-black tracking-tighter uppercase leading-none">DEVAC <span className="text-indigo-400 font-light">CONNECT</span></h1>
         </div>

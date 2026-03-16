@@ -1,19 +1,19 @@
 import React, { useRef, useState } from 'react';
-import { FileUp, Loader2, CheckCircle2, AlertCircle, FileSpreadsheet, FileText } from 'lucide-react';
+import { FileUp, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import mammoth from 'mammoth';
-import { UnitMember } from '../types';
-import { updateUnitInDB } from '../services/firebaseService';
+import { ProgrammeItem } from '../../types';
+import { updateUnitInDB } from '../../services/firebaseService';
 
-interface MemberImportButtonProps {
+interface ProgramImportButtonProps {
     unitId: string;
-    currentMembers: UnitMember[];
+    currentProgramme: ProgrammeItem[];
     onImportComplete: () => void;
 }
 
-export const MemberImportButton: React.FC<MemberImportButtonProps> = ({
+export const ProgramImportButton: React.FC<ProgramImportButtonProps> = ({
     unitId,
-    currentMembers,
+    currentProgramme,
     onImportComplete
 }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -25,11 +25,13 @@ export const MemberImportButton: React.FC<MemberImportButtonProps> = ({
 
     const normalizeHeader = (header: string) => {
         const h = header.toLowerCase().trim();
-        if (h.includes('nom') || h.includes('name') || h.includes('surname')) return 'name';
-        if (h.includes('prénom') || h.includes('first')) return 'firstName';
-        if (h.includes('tel') || h.includes('contact') || h.includes('phone') || h.includes('téléphone')) return 'phone';
-        if (h.includes('quartier') || h.includes('lieu') || h.includes('location') || h.includes('habitation')) return 'location';
-        if (h.includes('profession') || h.includes('job') || h.includes('métier') || h.includes('travail')) return 'profession';
+        if (h.includes('date') || h.includes('jour') || h.includes('quand')) return 'date';
+        if (h.includes('activit') || h.includes('programme') || h.includes('sujet') || h.includes('quoi')) return 'activity';
+        if (h.includes('ressource') || h.includes('moyen') || h.includes('matériel')) return 'resources';
+        if (h.includes('lieu') || h.includes('mission') || h.includes('où') || h === 'ou') return 'location';
+        if (h.includes('budget') || h.includes('montant') || h.includes('coût') || h.includes('cout') || h.includes('fcfa')) return 'budget';
+        if (h.includes('responsable') || h.includes('chargé') || h.includes('charge') || h.includes('qui')) return 'assignedTo';
+        if (h.includes('contact') || h.includes('tél') || h.includes('tel') || h.includes('téléphone') || h.includes('telephone')) return 'assignedContact';
         return h;
     };
 
@@ -38,23 +40,23 @@ export const MemberImportButton: React.FC<MemberImportButtonProps> = ({
         const result = await mammoth.extractRawText({ arrayBuffer });
         const text = result.value;
 
-        // Simple parsing for Word: treat lines as potential members
-        // If it's a table, mammoth extracts it as text with tabs/spaces
         const lines = text.split('\n').filter(line => line.trim().length > 0);
-        const members: any[] = [];
+        const activities: any[] = [];
 
         for (const line of lines) {
             const parts = line.split(/[\t,|;]+/).map(p => p.trim());
             if (parts.length >= 2) {
-                members.push({
-                    name: parts[0],
-                    phone: parts[1] || '',
+                activities.push({
+                    date: parts[0],
+                    activity: parts[1] || '',
                     location: parts[2] || '',
-                    profession: parts[3] || ''
+                    budget: parts[3] || '0',
+                    assignedTo: parts[4] || '',
+                    assignedContact: parts[5] || ''
                 });
             }
         }
-        return members;
+        return activities;
     };
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -70,7 +72,6 @@ export const MemberImportButton: React.FC<MemberImportButtonProps> = ({
             if (file.name.endsWith('.docx')) {
                 importedData = await parseWordFile(file);
             } else {
-                // Excel or CSV
                 const data = await file.arrayBuffer();
                 const workbook = XLSX.read(data);
                 const worksheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -81,64 +82,51 @@ export const MemberImportButton: React.FC<MemberImportButtonProps> = ({
                     const rows = json.slice(1);
 
                     importedData = rows.map(row => {
-                        const member: any = {};
+                        const activity: any = {};
                         headers.forEach((header, index) => {
-                            if (header === 'name' || header === 'firstName' || header === 'phone' || header === 'location' || header === 'profession') {
-                                member[header] = row[index];
+                            if (['date', 'activity', 'location', 'resources', 'budget', 'assignedTo', 'assignedContact'].includes(header)) {
+                                activity[header] = row[index];
                             }
                         });
-                        return member;
+                        return activity;
                     });
                 }
             }
 
-            // Filter and format members
-            const validMembers: UnitMember[] = importedData
-                .filter(m => m && (m.name || m.firstName))
-                .map(m => ({
+            const validActivities: ProgrammeItem[] = importedData
+                .filter(a => a && a.activity)
+                .map(a => ({
                     id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-                    name: `${m.firstName || ''} ${m.name || ''}`.trim(),
-                    phone: String(m.phone || ''),
-                    location: m.location || '',
-                    profession: m.profession || ''
+                    date: String(a.date || new Date().toISOString().split('T')[0]),
+                    activity: String(a.activity || ''),
+                    location: String(a.location || ''),
+                    budget: String(a.budget || '0').replace(/\s/g, '').replace(/[^\d]/g, ''),
+                    assignedTo: String(a.assignedTo || ''),
+                    assignedContact: String(a.assignedContact || ''),
+                    resources: String(a.resources || '')
                 }));
 
-            if (validMembers.length === 0) {
-                throw new Error("Aucun membre valide n'a été détecté dans le fichier.");
+            if (validActivities.length === 0) {
+                throw new Error("Aucune activité valide n'a été détectée dans le fichier.");
             }
 
-            // Merge with current members (avoid duplicates based on phone if present)
-            const existingPhones = new Set(currentMembers.map(m => m.phone).filter(p => p && p.length > 0));
-            const newMembers = validMembers.filter(m => !m.phone || !existingPhones.has(m.phone));
+            const updatedProgrammeList = [...currentProgramme, ...validActivities];
 
-            // Update unit in Firebase
-            // Note: We need to get the full unit object first or use a service that handles partial update
-            // For simplicity here, we rely on the component being passed the current member list
-            // In a real production app, we'd use a server-side or batch transaction
-            const updatedMembersList = [...currentMembers, ...newMembers];
-
-            // We need a way to get the full unit object to update it. 
-            // This is a limitation of the current prop-based approach.
-            // Let's assume we can fetch it or that onImportComplete will handle the refresh.
-
-            // For now, let's trigger a custom event or use a broader service.
-            // Actually, firebaseService already has updateUnitInDB.
-
-            // Let's get the unit document first
-            const { db } = await import('../services/firebaseService');
+            const { db } = await import('../../services/firebaseService');
             const { doc, getDoc } = await import('firebase/firestore');
             const unitRef = doc(db, 'units', unitId);
             const unitSnap = await getDoc(unitRef);
 
             if (unitSnap.exists()) {
                 const unitData = unitSnap.data();
-                await updateUnitInDB({
+                const finalData = {
                     ...unitData,
                     id: unitId,
-                    members: updatedMembersList
-                } as any);
+                    programme: updatedProgrammeList
+                };
+                await updateUnitInDB(finalData as any);
 
-                setImportStatus({ success: newMembers.length });
+                setImportStatus({ success: validActivities.length });
                 onImportComplete();
             } else {
                 throw new Error("Unité introuvable dans la base de données.");
@@ -173,7 +161,7 @@ export const MemberImportButton: React.FC<MemberImportButtonProps> = ({
                 ) : (
                     <FileUp className="w-4 h-4" />
                 )}
-                <span>Importer (Excel/CSV/Word)</span>
+                <span>Importer Programme</span>
             </button>
 
             {importStatus && (
@@ -182,7 +170,7 @@ export const MemberImportButton: React.FC<MemberImportButtonProps> = ({
                     {importStatus.success ? (
                         <>
                             <CheckCircle2 className="w-4 h-4" />
-                            <span>{importStatus.success} membres importés !</span>
+                            <span>{importStatus.success} activités importées !</span>
                         </>
                     ) : (
                         <>

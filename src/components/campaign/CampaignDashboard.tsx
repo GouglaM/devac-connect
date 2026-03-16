@@ -8,9 +8,9 @@ import {
 import {
     Announcement, EvangelismUnit, Committee, AttendanceSession, UnitMember,
     CampaignRegistration, CampaignComiteMember, CampaignGroup, CampaignContribution, CampaignDonation, CampaignExpense
-} from '../types';
-import { ADMIN_PASSWORD, TAFIRE_SITES, CAMPAIGN_ACTIVITIES, PREP_ACTIVITIES, MISSIONARY_CATEGORIES } from '../constants';
-import { exportData } from '../services/exportUtils';
+} from '../../types';
+import { ADMIN_PASSWORD, TAFIRE_SITES, CAMPAIGN_ACTIVITIES, PREP_ACTIVITIES, MISSIONARY_CATEGORIES } from '../../constants';
+import { exportData } from '../../services/exportUtils';
 
 interface Props {
     units: EvangelismUnit[];
@@ -90,6 +90,16 @@ const CampaignDashboard: React.FC<Props> = ({ units, committees, history, regist
     const [isTreasuryUnlocked, setIsTreasuryUnlocked] = useState(false);
     const [showUnlockPrompt, setShowUnlockPrompt] = useState(false);
     const [selectedMissionaryHistory, setSelectedMissionaryHistory] = useState<string | null>(null);
+    const [selectedPrepActivity, setSelectedPrepActivity] = useState<string | null>(null);
+    const [showPrepModal, setShowPrepModal] = useState(false);
+    const [manualAttendeeName, setManualAttendeeName] = useState('');
+    const [manualAttendees, setManualAttendees] = useState<string[]>([]);
+    const [prepDate, setPrepDate] = useState(new Date().toISOString().split('T')[0]);
+    // Thursday attendance panel enhancements
+    const [memberSearch, setMemberSearch] = useState('');
+    const [guestName, setGuestName] = useState('');
+    const [guestList, setGuestList] = useState<string[]>([]);
+    const [selectedPrepType, setSelectedPrepType] = useState<string>('prep1');
 
     const unifiedParticipants = useMemo(() => {
         const list: { id: string; name: string; group: string; photo?: string; isRegistrant: boolean; isRegistered: boolean }[] = [];
@@ -233,9 +243,14 @@ const CampaignDashboard: React.FC<Props> = ({ units, committees, history, regist
             groupId: CAMPAIGN_ID,
             date: getDateStr(focusedDate),
             attendees,
-            title: `CAMPAGNE D'ÉVANGÉLISATION - PRÉPARATION TAFIRE`
+            extraAttendees: guestList,
+            activityType: selectedPrepType,
+            title: `PRÉPARATION TAFIRE — ${PREP_ACTIVITIES.find(a => a.id === selectedPrepType)?.name || 'Séance'}`
         });
         setFocusedDate(null);
+        setGuestList([]);
+        setGuestName('');
+        setMemberSearch('');
     };
 
     const getFidelity = (memberId: string) => {
@@ -740,124 +755,213 @@ const CampaignDashboard: React.FC<Props> = ({ units, committees, history, regist
                         </div>
 
                         {focusedDate ? (
-                            <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
-                                <div className="flex items-center justify-between p-6 bg-slate-50 rounded-3xl border border-slate-200">
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center font-black text-indigo-600 text-lg">{focusedDate}</div>
-                                        <div>
-                                            <h4 className="text-xs font-black uppercase text-slate-700 tracking-widest">Saisie des présences</h4>
-                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Sélectionnez les participants</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex flex-col md:flex-row gap-4 items-center">
-                                        <div className="flex flex-col md:flex-row gap-4">
+                            <div className="space-y-0 animate-in slide-in-from-bottom-4 duration-500">
+
+                                {/* ── PROGRAMME TYPE SELECTOR ─────────────────── */}
+                                <div className="p-6 bg-gradient-to-r from-indigo-600 to-indigo-800 rounded-[2rem] shadow-lg">
+                                    <div className="text-[9px] font-black text-indigo-300 uppercase tracking-[0.2em] mb-3">Type de Programme · Jeudi {focusedDate}</div>
+                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                        {PREP_ACTIVITIES.map(act => (
                                             <button
-                                                onClick={handleSave}
-                                                disabled={isLocked && history.some(s => s.groupId === CAMPAIGN_ID && s.date === getDateStr(focusedDate))}
-                                                className={`px-10 py-5 rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl transition-all active:scale-95 ${isLocked && history.some(s => s.groupId === CAMPAIGN_ID && s.date === getDateStr(focusedDate))
-                                                    ? 'bg-slate-100 text-slate-300 cursor-not-allowed'
-                                                    : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                                                key={act.id}
+                                                onClick={() => setSelectedPrepType(act.id)}
+                                                className={`px-3 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-tight transition-all text-left border ${selectedPrepType === act.id
+                                                        ? 'bg-white text-indigo-700 border-white shadow-md scale-[1.02]'
+                                                        : 'bg-white/10 text-indigo-200 border-white/10 hover:bg-white/20'
                                                     }`}
                                             >
-                                                {isLocked && history.some(s => s.groupId === CAMPAIGN_ID && s.date === getDateStr(focusedDate)) ? "Verrouillé" : `Valider le Jeudi ${focusedDate}`}
+                                                {act.name}
                                             </button>
-                                            <div className="flex items-center gap-2">
-                                                {history.some(s => s.groupId === CAMPAIGN_ID && s.date === getDateStr(focusedDate)) && (
-                                                    <>
-                                                        <button
-                                                            onClick={() => setShowDeleteAction(!showDeleteAction)}
-                                                            className={`p-5 rounded-2xl transition-all active:scale-95 border ${showDeleteAction ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-400 border-slate-200 hover:border-indigo-300 hover:text-indigo-600'}`}
-                                                            title={showDeleteAction ? "Masquer les options de suppression" : "Afficher les options de suppression"}
-                                                        >
-                                                            {showDeleteAction ? <EyeOff size={18} /> : <Eye size={18} />}
-                                                        </button>
-                                                        {showDeleteAction && (
-                                                            <button
-                                                                onClick={handleDeleteSession}
-                                                                className="px-8 py-5 bg-rose-50 text-rose-600 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-rose-100 transition-all border border-rose-100 active:scale-95 flex items-center gap-2 animate-in slide-in-from-left-2 duration-300"
-                                                            >
-                                                                <XCircle size={16} /> Désactiver
-                                                            </button>
-                                                        )}
-                                                    </>
-                                                )}
-                                            </div>
-                                        </div>
+                                        ))}
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-                                    {unifiedParticipants.map((p) => {
-                                        const isChecked = !!checkedDates[`${p.id}-${focusedDate}`];
-                                        const { present, percentage } = getFidelity(p.id);
-                                        return (
-                                            <div
-                                                key={p.id}
-                                                onClick={() => {
-                                                    const alreadyExists = history.some(s => s.groupId === CAMPAIGN_ID && s.date === getDateStr(focusedDate));
-                                                    if (alreadyExists && isLocked) {
-                                                        setShowPasswordPrompt(true);
-                                                        return;
-                                                    }
-                                                    setCheckedDates(prev => ({ ...prev, [`${p.id}-${focusedDate}`]: !isChecked }));
-                                                }}
-                                                className={`p-6 rounded-3xl border-2 transition-all flex items-center justify-between ${isChecked ? 'bg-indigo-50 border-indigo-300' : 'bg-white border-slate-100 hover:border-slate-200'
-                                                    } ${isLocked && history.some(s => s.groupId === CAMPAIGN_ID && s.date === getDateStr(focusedDate)) ? 'cursor-not-allowed opacity-80' : 'cursor-pointer'}`}
-                                            >
-                                                <div className="flex items-center gap-4">
-                                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm uppercase ${isChecked ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-400'}`}>
-                                                        {p.name.charAt(0)}
-                                                    </div>
-                                                    <div>
-                                                        <div className={`text-[11px] font-black uppercase ${isChecked ? 'text-indigo-900' : 'text-slate-800'}`}>{p.name}</div>
-                                                        <div className="flex flex-col">
-                                                            <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{p.group}</div>
-                                                            {p.isRegistered && (
-                                                                <div className="mt-1.5 self-start px-2 py-0.5 bg-orange-100 text-orange-700 rounded-lg text-[7px] font-black uppercase tracking-wider border border-orange-200">
-                                                                    INSCRIT POUR TAFIRE
+                                {/* ── ACTION BAR ──────────────────────────────── */}
+                                <div className="flex items-center justify-between p-5 bg-slate-50 rounded-[2rem] border border-slate-200 mt-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center font-black text-indigo-600 text-lg border border-slate-100">{focusedDate}</div>
+                                        <div>
+                                            <h4 className="text-[10px] font-black uppercase text-slate-700 tracking-widest">Saisie des présences</h4>
+                                            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">
+                                                {unifiedParticipants.filter(p => checkedDates[`${p.id}-${focusedDate}`]).length} membre(s) + {guestList.length} invité(s)
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={handleSave}
+                                            disabled={isLocked && history.some(s => s.groupId === CAMPAIGN_ID && s.date === getDateStr(focusedDate))}
+                                            className={`px-8 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg transition-all active:scale-95 ${isLocked && history.some(s => s.groupId === CAMPAIGN_ID && s.date === getDateStr(focusedDate))
+                                                    ? 'bg-slate-100 text-slate-300 cursor-not-allowed'
+                                                    : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                                                }`}
+                                        >
+                                            {isLocked && history.some(s => s.groupId === CAMPAIGN_ID && s.date === getDateStr(focusedDate)) ? 'Verrouillé' : `Valider le Jeudi ${focusedDate}`}
+                                        </button>
+                                        {history.some(s => s.groupId === CAMPAIGN_ID && s.date === getDateStr(focusedDate)) && (
+                                            <>
+                                                <button
+                                                    onClick={() => setShowDeleteAction(!showDeleteAction)}
+                                                    className={`p-4 rounded-2xl transition-all active:scale-95 border ${showDeleteAction ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-400 border-slate-200 hover:border-indigo-300 hover:text-indigo-600'
+                                                        }`}
+                                                >
+                                                    {showDeleteAction ? <EyeOff size={16} /> : <Eye size={16} />}
+                                                </button>
+                                                {showDeleteAction && (
+                                                    <button
+                                                        onClick={handleDeleteSession}
+                                                        className="px-5 py-4 bg-rose-50 text-rose-600 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-rose-100 transition-all border border-rose-100 active:scale-95 flex items-center gap-2"
+                                                    >
+                                                        <XCircle size={14} /> Supprimer
+                                                    </button>
+                                                )}
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* ── SEARCH + MEMBERS ────────────────────────── */}
+                                <div className="mt-4 space-y-4">
+                                    <div className="relative">
+                                        <Search size={16} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" />
+                                        <input
+                                            type="text"
+                                            value={memberSearch}
+                                            onChange={e => setMemberSearch(e.target.value)}
+                                            placeholder="Rechercher un membre..."
+                                            className="w-full pl-12 pr-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder:text-slate-300"
+                                        />
+                                        {memberSearch && (
+                                            <button onClick={() => setMemberSearch('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500">
+                                                <XCircle size={16} />
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[320px] overflow-y-auto pr-1 custom-scrollbar">
+                                        {unifiedParticipants
+                                            .filter(p => !memberSearch || p.name.toLowerCase().includes(memberSearch.toLowerCase()) || p.group.toLowerCase().includes(memberSearch.toLowerCase()))
+                                            .map((p) => {
+                                                const isChecked = !!checkedDates[`${p.id}-${focusedDate}`];
+                                                const { present, percentage } = getFidelity(p.id);
+                                                return (
+                                                    <div
+                                                        key={p.id}
+                                                        onClick={() => {
+                                                            const alreadyExists = history.some(s => s.groupId === CAMPAIGN_ID && s.date === getDateStr(focusedDate));
+                                                            if (alreadyExists && isLocked) { setShowPasswordPrompt(true); return; }
+                                                            setCheckedDates(prev => ({ ...prev, [`${p.id}-${focusedDate}`]: !isChecked }));
+                                                        }}
+                                                        className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex items-center justify-between ${isChecked ? 'bg-indigo-50 border-indigo-300 shadow-sm' : 'bg-white border-slate-100 hover:border-indigo-200'
+                                                            } ${isLocked && history.some(s => s.groupId === CAMPAIGN_ID && s.date === getDateStr(focusedDate)) ? 'cursor-not-allowed opacity-70' : ''}`}
+                                                    >
+                                                        <div className="flex items-center gap-3">
+                                                            <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-sm uppercase flex-shrink-0 transition-all ${isChecked ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-100 text-slate-400'
+                                                                }`}>
+                                                                {isChecked ? <Check size={16} /> : p.name.charAt(0)}
+                                                            </div>
+                                                            <div className="min-w-0">
+                                                                <div className={`text-[10px] font-black uppercase truncate ${isChecked ? 'text-indigo-900' : 'text-slate-800'
+                                                                    }`}>{p.name}</div>
+                                                                <div className="text-[8px] font-bold text-slate-400 uppercase truncate">{p.group}</div>
+                                                                {p.isRegistered && (
+                                                                    <div className="mt-1 self-start px-1.5 py-0.5 bg-orange-100 text-orange-700 rounded text-[7px] font-black uppercase border border-orange-200 inline-block">
+                                                                        TAFIRE ✓
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex-shrink-0">
+                                                            {isChecked ? (
+                                                                <div className="flex flex-col items-center gap-1">
+                                                                    <div className="w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center text-white shadow-md"><Check size={14} /></div>
+                                                                    <span className="text-[8px] font-black text-indigo-600">{percentage}%</span>
+                                                                </div>
+                                                            ) : (
+                                                                <div className="relative w-8 h-8 flex items-center justify-center">
+                                                                    {(() => {
+                                                                        const dash = 2 * Math.PI * 14 * (percentage / 100);
+                                                                        const empty = 2 * Math.PI * 14 * (1 - percentage / 100);
+                                                                        return (
+                                                                            <>
+                                                                                <svg className="w-full h-full -rotate-90" viewBox="0 0 32 32">
+                                                                                    <circle cx="16" cy="16" r="14" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-slate-100" />
+                                                                                    <circle cx="16" cy="16" r="14" fill="none" stroke="currentColor" strokeWidth="2.5"
+                                                                                        className={`transition-all ${percentage > 80 ? 'text-emerald-500' : percentage > 50 ? 'text-amber-500' : 'text-rose-400'
+                                                                                            }`}
+                                                                                        strokeDasharray={`${dash} ${empty}`}
+                                                                                    />
+                                                                                </svg>
+                                                                                <span className="absolute text-[7px] font-black text-slate-600">{percentage}%</span>
+                                                                            </>
+                                                                        );
+                                                                    })()}
                                                                 </div>
                                                             )}
-                                                            <div className={`mt-1.5 text-[8px] font-black uppercase tracking-widest ${isChecked ? 'text-indigo-600' : 'text-slate-400'}`}>
-                                                                {present} Séance{present > 1 ? 's' : ''}
-                                                            </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                                <div className="flex items-center gap-4">
-                                                    {isChecked ? (
-                                                        <div className="flex flex-col items-center gap-1.5">
-                                                            <div className="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center text-white shadow-lg animate-in zoom-in duration-300">
-                                                                <Check size={20} />
-                                                            </div>
-                                                            <span className="text-[9px] font-black text-indigo-600">{percentage}%</span>
-                                                        </div>
-                                                    ) : (
-                                                        <div className="relative w-10 h-10 flex items-center justify-center">
-                                                            {(() => {
-                                                                const ratio = percentage / 100;
-                                                                const dash = 2 * Math.PI * 18 * ratio;
-                                                                const empty = 2 * Math.PI * 18 * (1 - ratio);
-                                                                return (
-                                                                    <>
-                                                                        <svg className="w-full h-full -rotate-90">
-                                                                            <circle cx="20" cy="20" r="18" fill="none" stroke="currentColor" strokeWidth="3" className="text-slate-100" />
-                                                                            <circle
-                                                                                cx="20" cy="20" r="18" fill="none" stroke="currentColor" strokeWidth="3"
-                                                                                className={`transition-all duration-1000 ease-out ${percentage > 80 ? 'text-emerald-500' : percentage > 50 ? 'text-amber-500' : 'text-rose-500'}`}
-                                                                                strokeDasharray={`${dash} ${empty}`}
-                                                                            />
-                                                                        </svg>
-                                                                        <span className="absolute text-[8px] font-black text-slate-600">{percentage}%</span>
-                                                                    </>
-                                                                );
-                                                            })()}
-                                                        </div>
-                                                    )}
-                                                </div>
+                                                );
+                                            })}
+                                        {unifiedParticipants.filter(p => !memberSearch || p.name.toLowerCase().includes(memberSearch.toLowerCase()) || p.group.toLowerCase().includes(memberSearch.toLowerCase())).length === 0 && (
+                                            <div className="col-span-2 py-10 text-center text-slate-300">
+                                                <Search size={32} className="mx-auto mb-3 opacity-30" />
+                                                <p className="text-xs font-black uppercase tracking-widest">Aucun résultat pour "{memberSearch}"</p>
                                             </div>
-                                        );
-                                    })}
+                                        )}
+                                    </div>
                                 </div>
+
+                                {/* ── GUEST ENTRY (no unit impact) ─────────────── */}
+                                <div className="mt-4 p-6 bg-amber-50 rounded-[2rem] border border-amber-100 space-y-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 bg-amber-100 text-amber-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                                            <UserPlus size={16} />
+                                        </div>
+                                        <div>
+                                            <h4 className="text-[10px] font-black text-slate-700 uppercase tracking-widest">Participants Invités / Hors-Unités</h4>
+                                            <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Ces noms ne seront pas ajoutés aux unités</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-3">
+                                        <input
+                                            type="text"
+                                            value={guestName}
+                                            onChange={e => setGuestName(e.target.value)}
+                                            onKeyDown={e => {
+                                                if (e.key === 'Enter' && guestName.trim()) {
+                                                    setGuestList(prev => [...prev, guestName.trim().toUpperCase()]);
+                                                    setGuestName('');
+                                                }
+                                            }}
+                                            placeholder="Nom du participant invité (Entrée pour ajouter)..."
+                                            className="flex-1 px-5 py-3 bg-white border border-amber-200 rounded-2xl text-xs font-bold focus:ring-2 focus:ring-amber-400 outline-none transition-all placeholder:text-slate-300"
+                                        />
+                                        <button
+                                            onClick={() => {
+                                                if (guestName.trim()) {
+                                                    setGuestList(prev => [...prev, guestName.trim().toUpperCase()]);
+                                                    setGuestName('');
+                                                }
+                                            }}
+                                            className="px-5 py-3 bg-amber-500 text-white rounded-2xl font-black hover:bg-amber-600 transition-all shadow-md shadow-amber-500/20 active:scale-95"
+                                        >
+                                            <Plus size={18} />
+                                        </button>
+                                    </div>
+                                    {guestList.length > 0 && (
+                                        <div className="flex flex-wrap gap-2">
+                                            {guestList.map((name, i) => (
+                                                <div key={i} className="flex items-center gap-2 px-3 py-1.5 bg-white border border-amber-200 rounded-xl shadow-sm">
+                                                    <span className="text-[10px] font-black text-slate-700 uppercase">{name}</span>
+                                                    <button onClick={() => setGuestList(prev => prev.filter((_, idx) => idx !== i))} className="text-rose-400 hover:text-rose-600 transition-colors">
+                                                        <XCircle size={12} />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
                             </div>
                         ) : (
                             <div className="flex flex-col items-center justify-center py-20 bg-slate-50/50 rounded-[3rem] border-2 border-dashed border-slate-200 text-slate-400">
@@ -1561,17 +1665,48 @@ const CampaignDashboard: React.FC<Props> = ({ units, committees, history, regist
                                                                         act.icon === 'BookOpen' ? BookOpen :
                                                                             act.icon === 'ShieldCheck' ? ShieldCheck : ListChecks;
 
+                                    const activitySessions = history.filter(s => s.groupId === CAMPAIGN_ID && s.activityType === act.id);
+                                    const totalPresent = activitySessions.reduce((acc, s) => acc + s.attendees.length + (s.extraAttendees?.length || 0), 0);
+                                    const avgPresent = activitySessions.length > 0 ? Math.round(totalPresent / activitySessions.length) : 0;
+
                                     return (
-                                        <div key={act.id} className="bg-indigo-50/30 rounded-[2.5rem] p-8 border border-indigo-100 hover:border-indigo-300 hover:bg-white transition-all hover:shadow-xl group">
-                                            <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-indigo-600 shadow-sm group-hover:scale-110 transition-transform mb-6 border border-slate-100">
-                                                <IconComponent size={28} />
+                                        <button
+                                            key={act.id}
+                                            onClick={() => {
+                                                setSelectedPrepActivity(act.id);
+                                                setShowPrepModal(true);
+                                            }}
+                                            className="bg-indigo-50/30 rounded-[2.5rem] p-8 border border-indigo-100 hover:border-indigo-300 hover:bg-white transition-all hover:shadow-xl group text-left w-full"
+                                        >
+                                            <div className="flex justify-between items-start mb-6">
+                                                <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-indigo-600 shadow-sm group-hover:scale-110 transition-transform border border-slate-100">
+                                                    <IconComponent size={28} />
+                                                </div>
+                                                <div className="flex flex-col items-end">
+                                                    <span className="text-[14px] font-black text-indigo-600 leading-none">{activitySessions.length}</span>
+                                                    <span className="text-[7px] font-black text-indigo-400 uppercase tracking-widest mt-1">Séances</span>
+                                                </div>
                                             </div>
                                             <h3 className="text-sm font-black text-slate-900 uppercase leading-snug tracking-tight">{act.name}</h3>
+
+                                            <div className="mt-6 pt-6 border-t border-indigo-100/50 grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <div className="text-[12px] font-black text-slate-800 leading-none">{totalPresent}</div>
+                                                    <div className="text-[7px] font-black text-slate-400 uppercase tracking-widest mt-1">Tot. Présences</div>
+                                                </div>
+                                                <div>
+                                                    <div className="text-[12px] font-black text-indigo-500 leading-none">{avgPresent}</div>
+                                                    <div className="text-[7px] font-black text-indigo-400/70 uppercase tracking-widest mt-1">Moyenne</div>
+                                                </div>
+                                            </div>
+
                                             <div className="mt-4 flex items-center gap-2">
                                                 <div className="w-2 h-2 rounded-full bg-indigo-400"></div>
-                                                <span className="text-[8px] font-black text-indigo-400 uppercase tracking-widest">En cours de planification</span>
+                                                <span className="text-[8px] font-black text-indigo-400 uppercase tracking-widest">
+                                                    {activitySessions.length > 0 ? "Suivi Actif" : "En cours de planification"}
+                                                </span>
                                             </div>
-                                        </div>
+                                        </button>
                                     );
                                 })}
                             </div>
@@ -2516,6 +2651,216 @@ const CampaignDashboard: React.FC<Props> = ({ units, committees, history, regist
                     )}
                 </div>
             )}
+            {/* PREP ACTIVITY TRACKING MODAL */}
+            {showPrepModal && selectedPrepActivity && (() => {
+                const actInfo = PREP_ACTIVITIES.find(a => a.id === selectedPrepActivity)!;
+                const actSessions = history.filter(s => s.groupId === CAMPAIGN_ID && s.activityType === selectedPrepActivity);
+                const sessionId = `${CAMPAIGN_ID}-${selectedPrepActivity}-${prepDate}`;
+                const existingSession = actSessions.find(s => s.date === prepDate);
+                const totalPresences = actSessions.reduce((acc, s) => acc + s.attendees.length + (s.extraAttendees?.length || 0), 0);
+                const avgPresences = actSessions.length > 0 ? Math.round(totalPresences / actSessions.length) : 0;
+
+                return (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+                        <div className="bg-white w-full max-w-3xl rounded-[3rem] shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]">
+                            {/* Header */}
+                            <div className="bg-gradient-to-r from-indigo-700 to-indigo-900 p-8 text-white flex justify-between items-start rounded-t-[3rem] flex-shrink-0">
+                                <div>
+                                    <div className="text-[9px] font-black text-indigo-300 uppercase tracking-[0.2em] mb-2">TAFIRE 2026 · Phase 1</div>
+                                    <h3 className="text-xl font-black uppercase tracking-tighter leading-tight">{actInfo.name}</h3>
+                                    {/* Stats Summary */}
+                                    <div className="flex gap-6 mt-4">
+                                        <div><span className="text-2xl font-black text-white">{actSessions.length}</span><div className="text-[8px] font-black text-indigo-300 uppercase tracking-widest">Séances</div></div>
+                                        <div className="w-px bg-white/20"></div>
+                                        <div><span className="text-2xl font-black text-white">{totalPresences}</span><div className="text-[8px] font-black text-indigo-300 uppercase tracking-widest">Prés. Totales</div></div>
+                                        <div className="w-px bg-white/20"></div>
+                                        <div><span className="text-2xl font-black text-amber-300">{avgPresences}</span><div className="text-[8px] font-black text-indigo-300 uppercase tracking-widest">Moy./Séance</div></div>
+                                    </div>
+                                </div>
+                                <button onClick={() => { setShowPrepModal(false); setManualAttendees([]); setManualAttendeeName(''); }} className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-xl flex items-center justify-center transition-colors flex-shrink-0">
+                                    <XCircle size={20} />
+                                </button>
+                            </div>
+
+                            <div className="overflow-y-auto custom-scrollbar flex-1">
+                                {/* Date Picker */}
+                                <div className="p-8 border-b border-slate-100">
+                                    <div className="flex flex-col sm:flex-row gap-4 items-end">
+                                        <div className="flex-1 space-y-2">
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Date de la Séance</label>
+                                            <input
+                                                type="date"
+                                                value={prepDate}
+                                                onChange={e => setPrepDate(e.target.value)}
+                                                className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                            />
+                                        </div>
+                                        {existingSession && (
+                                            <div className="px-5 py-3 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-700 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                                                <CheckCircle size={14} /> {existingSession.attendees.length + (existingSession.extraAttendees?.length || 0)} présences enregistrées
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Members Checklist */}
+                                <div className="p-8 space-y-6">
+                                    <h4 className="text-xs font-black text-slate-700 uppercase tracking-widest">Membres des Unités / Comités</h4>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-64 overflow-y-auto pr-1 custom-scrollbar">
+                                        {unifiedParticipants.map(p => {
+                                            const key = `${p.id}-prep-${prepDate}`;
+                                            const isChecked = !!checkedDates[key];
+                                            return (
+                                                <div
+                                                    key={p.id}
+                                                    onClick={() => setCheckedDates(prev => ({ ...prev, [key]: !isChecked }))}
+                                                    className={`p-4 rounded-2xl border-2 cursor-pointer flex items-center gap-3 transition-all ${isChecked ? 'bg-indigo-50 border-indigo-300' : 'bg-white border-slate-100 hover:border-indigo-200'}`}
+                                                >
+                                                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-sm flex-shrink-0 transition-all ${isChecked ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-100 text-slate-400'}`}>
+                                                        {isChecked ? <Check size={16} /> : p.name.charAt(0)}
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <div className={`text-[10px] font-black uppercase truncate ${isChecked ? 'text-indigo-900' : 'text-slate-700'}`}>{p.name}</div>
+                                                        <div className="text-[8px] text-slate-400 font-bold uppercase truncate">{p.group}</div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+
+                                    {/* Manual Name Entry */}
+                                    <div className="space-y-3 pt-4 border-t border-slate-100">
+                                        <h4 className="text-xs font-black text-slate-700 uppercase tracking-widest">Participants Extérieurs / Noms Libres</h4>
+                                        <div className="flex gap-3">
+                                            <input
+                                                type="text"
+                                                value={manualAttendeeName}
+                                                onChange={e => setManualAttendeeName(e.target.value)}
+                                                onKeyDown={e => {
+                                                    if (e.key === 'Enter' && manualAttendeeName.trim()) {
+                                                        setManualAttendees(prev => [...prev, manualAttendeeName.trim().toUpperCase()]);
+                                                        setManualAttendeeName('');
+                                                    }
+                                                }}
+                                                placeholder="Saisir un nom et appuyer sur ENTRÉE..."
+                                                className="flex-1 px-5 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder:text-slate-300"
+                                            />
+                                            <button
+                                                onClick={() => {
+                                                    if (manualAttendeeName.trim()) {
+                                                        setManualAttendees(prev => [...prev, manualAttendeeName.trim().toUpperCase()]);
+                                                        setManualAttendeeName('');
+                                                    }
+                                                }}
+                                                className="px-5 py-3 bg-indigo-600 text-white rounded-2xl font-black text-xs hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-600/20 active:scale-95"
+                                            >
+                                                <Plus size={18} />
+                                            </button>
+                                        </div>
+                                        {manualAttendees.length > 0 && (
+                                            <div className="flex flex-wrap gap-2 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                                {manualAttendees.map((name, idx) => (
+                                                    <div key={idx} className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-xl shadow-sm">
+                                                        <span className="text-[10px] font-black text-slate-700 uppercase">{name}</span>
+                                                        <button onClick={() => setManualAttendees(prev => prev.filter((_, i) => i !== idx))} className="text-rose-400 hover:text-rose-600 transition-colors">
+                                                            <XCircle size={12} />
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Session History */}
+                                    {actSessions.length > 0 && (
+                                        <div className="space-y-3 pt-4 border-t border-slate-100">
+                                            <h4 className="text-xs font-black text-slate-700 uppercase tracking-widest">Historique des Séances</h4>
+                                            <div className="space-y-2 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
+                                                {[...actSessions].sort((a, b) => b.date.localeCompare(a.date)).map(s => (
+                                                    <div key={s.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-8 h-8 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center">
+                                                                <Calendar size={14} />
+                                                            </div>
+                                                            <div>
+                                                                <div className="text-[10px] font-black text-slate-800 uppercase">
+                                                                    {new Date(s.date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                                                                </div>
+                                                                {s.extraAttendees && s.extraAttendees.length > 0 && (
+                                                                    <div className="text-[8px] text-indigo-400 font-bold uppercase mt-0.5">+{s.extraAttendees.length} ext.</div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="text-right">
+                                                                <div className="text-sm font-black text-indigo-600">{s.attendees.length + (s.extraAttendees?.length || 0)}</div>
+                                                                <div className="text-[8px] text-slate-400 font-bold uppercase">présents</div>
+                                                            </div>
+                                                            {isAdmin && (
+                                                                <button
+                                                                    onClick={() => {
+                                                                        if (window.confirm(`Supprimer la séance du ${new Date(s.date + 'T12:00:00').toLocaleDateString('fr-FR')} ?`)) {
+                                                                            onDeleteSession(s.id);
+                                                                        }
+                                                                    }}
+                                                                    className="p-2 text-rose-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-colors"
+                                                                >
+                                                                    <Trash2 size={14} />
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Footer Actions */}
+                            <div className="p-8 border-t border-slate-100 flex gap-4 flex-shrink-0">
+                                <button
+                                    onClick={() => { setShowPrepModal(false); setManualAttendees([]); setManualAttendeeName(''); }}
+                                    className="flex-1 py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-slate-50 transition-all"
+                                >
+                                    Fermer
+                                </button>
+                                <button
+                                    onClick={async () => {
+                                        const attendees = unifiedParticipants
+                                            .filter(p => checkedDates[`${p.id}-prep-${prepDate}`])
+                                            .map(p => p.id);
+
+                                        await onSaveSession({
+                                            id: sessionId,
+                                            groupId: CAMPAIGN_ID,
+                                            activityType: selectedPrepActivity!,
+                                            date: prepDate,
+                                            attendees,
+                                            extraAttendees: manualAttendees,
+                                            title: `${actInfo.name} - Séance du ${prepDate}`
+                                        });
+
+                                        // Reset manual attendees for next time
+                                        setManualAttendees([]);
+                                        setManualAttendeeName('');
+                                        // Reset checked for this date
+                                        const resetChecks: Record<string, boolean> = { ...checkedDates };
+                                        unifiedParticipants.forEach(p => {
+                                            delete resetChecks[`${p.id}-prep-${prepDate}`];
+                                        });
+                                        setCheckedDates(resetChecks);
+                                        alert(`✅ Séance enregistrée ! ${attendees.length + manualAttendees.length} présent(s).`);
+                                    }}
+                                    className="flex-[2] py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-600/20 flex items-center justify-center gap-2 active:scale-95"
+                                >
+                                    <ClipboardCheck size={16} /> Enregistrer la Séance
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            })()}
         </div>
     );
 };

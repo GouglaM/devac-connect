@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { subscribeToConnectionStatus, subscribeToUnits, subscribeToCommittees, subscribeToAttendance, forceRepairAllUnits, initializeData, getFirestoreError, testFirestoreConnection, subscribeToChat } from '../services/firebaseService';
+import { subscribeToConnectionStatus, subscribeToUnits, subscribeToCommittees, subscribeToAttendance, forceRepairAllUnits, initializeData, getFirestoreError, testFirestoreConnection, subscribeToChat } from '../../services/firebaseService';
 import { getAuth } from 'firebase/auth';
 import { getApp } from 'firebase/app';
 
@@ -142,7 +142,7 @@ const SyncDebug: React.FC = () => {
         }
         setLastError("Envoi d'un message de test...");
         try {
-            const { sendMessageToDB } = await import('../services/firebaseService');
+            const { sendMessageToDB } = await import('../../services/firebaseService');
             await sendMessageToDB({
                 id: 'debug_' + Date.now(),
                 sender: chatIdentity.id,
@@ -227,14 +227,14 @@ const SyncDebug: React.FC = () => {
                     </div>
 
                     <div style={{ marginBottom: '4px' }}>
-                        Config: <span style={{ color: configStatus.includes('MISSING') ? '#f87171' : '#9ca3af' }}>{configStatus}</span>
+                        Projet: <span style={{ color: '#9ca3af' }}>{import.meta.env.VITE_FIREBASE_PROJECT_ID}</span>
                     </div>
 
                     <div style={{ marginBottom: '8px' }}>
                         Auth: <span style={{ color: isConnected ? '#4ade80' : '#f87171', fontWeight: 'bold' }}>{isConnected ? 'OK (Anonyme)' : 'NON CONNECTÉ'}</span>
-                        {!isConnected && (
-                            <div style={{ color: '#f87171', marginTop: '2px', fontSize: '10px' }}>
-                                {authError || "En attente..."}
+                        {getFirestoreError() && (
+                            <div style={{ color: '#f87171', marginTop: '2px', fontSize: '9px', wordBreak: 'break-all' }}>
+                                ERR: {getFirestoreError()?.message || JSON.stringify(getFirestoreError())}
                             </div>
                         )}
                     </div>

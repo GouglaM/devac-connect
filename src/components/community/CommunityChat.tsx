@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Send, User, MessageCircle, Mic, Square, Play, Pause, Trash2, Users, Search, ChevronRight, X, Smile, Shield, RefreshCcw, Phone, Video } from 'lucide-react';
-import { ChatMessage, EvangelismUnit, Committee, Member } from '../types';
-import { subscribeToChat, sendMessageToDB, deleteMessageFromDB, subscribeToUnits, subscribeToCommittees } from '../services/dataService';
+import { ChatMessage, EvangelismUnit, Committee, Member } from '../../types';
+import { subscribeToChat, sendMessageToDB, deleteMessageFromDB, subscribeToUnits, subscribeToCommittees } from '../../services/dataService';
 
 const CommunityChat: React.FC = () => {
     const [messages, setMessages] = useState<ChatMessage[]>([]);

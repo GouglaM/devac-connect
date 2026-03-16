@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
-import { Announcement, SocialActionRecord, EvangelismUnit, Committee } from '../types';
+import { Announcement, SocialActionRecord, EvangelismUnit, Committee } from '../../types';
 import {
   Bell, AlertCircle, Clock, RefreshCw, Filter, X, CalendarDays, Share2,
   MessageCircle, Mail, Copy, Check, Smartphone, Image as ImageIcon,
   CalendarPlus, Plus, Send, Paperclip, Sparkles, Wand2, UserPlus, ArrowRight,
   HeartHandshake, Loader2, Download, FileSpreadsheet, FileText, Presentation
 } from 'lucide-react';
-import { extractSocialCase } from '../services/geminiService';
-import { updateUnitInDB, getInitialUnits } from '../services/dataService';
-import CreativeStudio from './CreativeStudio';
-import { generateId } from '../constants';
-import { exportData } from '../services/exportUtils';
-import { GlobalProgramImportButton } from './GlobalProgramImportButton';
+import { extractSocialCase } from '../../services/geminiService';
+import { updateUnitInDB, getInitialUnits } from '../../services/dataService';
+import CreativeStudio from '../ai/CreativeStudio';
+import { generateId } from '../../constants';
+import { exportData } from '../../services/exportUtils';
+import { GlobalProgramImportButton } from '../import/GlobalProgramImportButton';
 
 
 interface AnnouncementBoardProps {
@@ -438,7 +438,7 @@ const AnnouncementBoard: React.FC<AnnouncementBoardProps> = ({ announcements, un
               {/* IMAGE: Full Width */}
               {announcement.image && (
                 <div className="w-full h-48 sm:h-64 md:h-80 rounded-2xl overflow-hidden shadow-md">
-                  <img src={announcement.image} alt={announcement.title} className="w-full h-full object-cover" />
+                  <img src={announcement.image} alt={announcement.title} className="w-full h-full object-cover object-center" />
                 </div>
               )}
 
