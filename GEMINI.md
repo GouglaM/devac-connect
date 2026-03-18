@@ -68,6 +68,7 @@ devac-connect/
 │   │   │   ├── GlobalProgramImportButton.tsx
 │   │   │   └── ProgramImportButton.tsx
 │   │   └── 📁 ui/                # Reusable UI components
+│   │       ├── Header.tsx           # ⭐ Professional header with responsive nav
 │   │       ├── Clock.tsx
 │   │       ├── VerseTicker.tsx
 │   │       ├── PrayerFocus.tsx
@@ -212,6 +213,43 @@ const MyComponent: React.FC<MyComponentProps> = ({ label, onChange }) => {
 - Interactive buttons: always include `transition-all` and hover states
 - Animations: Tailwind's `animate-in fade-in`, `slide-in-from-bottom-4` etc.
 - Use `tailwind-merge` for combining classes: `cn("base-class", conditionalClass)`
+
+---
+
+## Header Component (Professional)
+
+The main navigation header is now in `src/components/ui/Header.tsx` — a dedicated, reusable component designed for professional presentation and responsive behavior.
+
+### Key Features
+
+- **Responsive**: Desktop navigation bar + mobile hamburger menu
+- **Aligned**: 3-section layout (logo left | spacer | controls right), navigation bar below
+- **Professional**: Orange border accent (4px), smooth transitions, clean styling
+- **Type-safe**: Props interface + ViewId type union
+
+### Usage in App.tsx
+
+```tsx
+<Header
+  currentView={currentView}
+  onViewChange={(view) => {
+    setCurrentView(view);
+    setSelectedGroup(null);
+  }}
+  onRefresh={handleRefreshData}
+  isRefreshing={isRefreshing}
+  currentLogo={currentLogo}
+/>
+```
+
+### When Modifying Header
+
+- Navigation items: Edit `NAVIGATION_ITEMS` array in Header.tsx
+- Styling: Adjust Tailwind classes (spacing, colors, responsive breakpoints)
+- Mobile behavior: Toggle `isMobileMenuOpen` state
+- New controls: Add buttons to right section (alongside Clock & Refresh)
+
+**See [HEADER_IMPROVEMENTS.md](HEADER_IMPROVEMENTS.md) for full refactoring details and future enhancements.**
 
 ---
 

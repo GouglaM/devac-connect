@@ -283,7 +283,41 @@ export interface CampaignExpense {
   amount: number;
   date: string;
   time?: string;
+  category?: string;
   observation?: string;
+}
+
+// ========== RBAC (Role-Based Access Control) Types ==========
+
+export type UserRole = 'ADMIN' | 'MODERATOR' | 'USER';
+
+export interface Permission {
+  id: string;
+  name: string;
+  description: string;
+  resource: string;
+  action: 'CREATE' | 'READ' | 'UPDATE' | 'DELETE' | 'EXECUTE';
+}
+
+export interface UserPermissions {
+  role: UserRole;
+  permissions: Permission[];
+  canManageUsers: boolean;
+  canManageContent: boolean;
+  canManageUnits: boolean;
+  canManageCampaigns: boolean;
+  canViewAnalytics: boolean;
+  canExportData: boolean;
+}
+
+export interface AuthContext {
+  isAuthenticated: boolean;
+  isAdmin: boolean;
+  role: UserRole;
+  permissions: UserPermissions;
+  lastLoginTime?: string;
+  loginAttempts?: number;
+  statusMessage?: string;
 }
 
 export interface CampaignSite {

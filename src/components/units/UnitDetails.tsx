@@ -20,6 +20,9 @@ import { ProgramImportButton } from '../import/ProgramImportButton';
 import { generateId } from '../../constants';
 import { exportData } from '../../services/exportUtils';
 import RichTextEditor from '../ui/RichTextEditor';
+import EditAuthModal from './EditAuthModal';
+import { authService } from '../../services/authService';
+import { Lock } from 'lucide-react';
 
 interface UnitDetailsProps {
     unit: EvangelismUnit | Committee;
@@ -51,6 +54,8 @@ const UnitDetails: React.FC<UnitDetailsProps> = ({ unit, onBack, onUpdate, isAdm
     const [activeSubTab, setActiveSubTab] = useState<'RESP' | 'OFFICE' | 'MEMBERS' | 'SOULS' | 'PROG' | 'REPORTS' | 'TREASURY' | 'SOCIAL' | 'BILAN'>('RESP');
     const [socialFilter, setSocialFilter] = useState<'ALL' | 'DEATH' | 'BIRTH' | 'WEDDING' | 'VISIT' | 'SICKNESS'>('ALL');
     const [isEditing, setIsEditing] = useState(false);
+    const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+    const [isSessionAuthenticated, setIsSessionAuthenticated] = useState(false);
     const [memberSearch, setMemberSearch] = useState('');
     const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
     const [editingMember, setEditingMember] = useState<Member | null>(null);
@@ -73,6 +78,7 @@ const UnitDetails: React.FC<UnitDetailsProps> = ({ unit, onBack, onUpdate, isAdm
     const [activityReportView, setActivityReportView] = useState<'GRID' | 'CARDS'>('CARDS');
     const [localLeader, setLocalLeader] = useState({ name: '', phone: '', email: '', photo: '' });
     const [localAssistant, setLocalAssistant] = useState({ name: '', phone: '', email: '', photo: '' });
+    const [adminAccessDeniedMessage, setAdminAccessDeniedMessage] = useState<string | null>(null);
 
     useEffect(() => {
         if (isEditing) return; // Prevent overwriting unsaved manual edits
@@ -194,8 +200,40 @@ const UnitDetails: React.FC<UnitDetailsProps> = ({ unit, onBack, onUpdate, isAdm
     };
 
     const openMemberModal = (member: Member | null = null) => {
+        if (!isAdmin) {
+            setAdminAccessDeniedMessage(member ? 'La modification de members est réservée à l\'administrateur.' : 'L\'ajout de nouveaux members est réservé à l\'administrateur.');
+            return;
+        }
         setEditingMember(member);
         setIsMemberModalOpen(true);
+    };
+
+    const protectedAddItem = (type: string) => {
+        if (!isAdmin) {
+            const messages: Record<string, string> = {
+                'SOUL': 'L\'ajout d\'une nouvelle âme est réservé à l\'administrateur.',
+                'SOCIAL': 'L\'ajout d\'une nouvelle fiche social est réservé à l\'administrateur.',
+                'TREASURY': 'L\'ajout d\'une entrée de trésorerie est réservé à l\'administrateur.',
+                'CONTRIBUTION': 'L\'ajout d\'une cotisation est réservé à l\'administrateur.',
+                'PROG': 'L\'ajout d\'un programme est réservé à l\'administrateur.',
+                'OFFICE': 'L\'ajout d\'un membre du bureau est réservé à l\'administrateur.',
+                'REPORT': 'L\'ajout d\'un rapport est réservé à l\'administrateur.',
+                'ACTIVITY_GRID': 'L\'ajout d\'une activité est réservé à l\'administrateur.',
+            };
+            setAdminAccessDeniedMessage(messages[type] || 'Cette action est réservée à l\'administrateur.');
+            return;
+        }
+        if (isEditing) {
+            addItem(type);
+        }
+    };
+
+    const protectedAddSoulFollowUp = (soulId: string) => {
+        if (!isAdmin) {
+            setAdminAccessDeniedMessage('L\'ajout d\'une note à un journal de bord est réservé à l\'administrateur.');
+            return;
+        }
+        addSoulFollowUp(soulId);
     };
 
     const addItem = (type: string) => {
@@ -456,7 +494,7 @@ const UnitDetails: React.FC<UnitDetailsProps> = ({ unit, onBack, onUpdate, isAdm
                     <div className="flex gap-4">
                         {isAdmin && (
                             <button
-                                onClick={isEditing ? saveAll : () => setIsEditing(true)}
+                                onClick={isEditing ? saveAll : () => setIsAuthModalOpen(true)}
                                 className={`flex items-center gap-3 px-10 py-5 rounded-[2rem] font-black uppercase text-xs tracking-widest shadow-2xl transition-all active:scale-95 ${isEditing ? 'bg-emerald-500 hover:bg-emerald-600 text-white' : 'bg-indigo-600 hover:bg-indigo-700 text-white'
                                     }`}
                             >
@@ -508,7 +546,7 @@ const UnitDetails: React.FC<UnitDetailsProps> = ({ unit, onBack, onUpdate, isAdm
                                             (localLeader.name || 'R').charAt(0)
                                         )}
                                     </div>
-                                    {isEditing && (
+                                    {isAdmin && isEditing && (
                                         <label className="absolute -bottom-2 -right-2 p-2 bg-indigo-600 text-white rounded-xl cursor-pointer shadow-xl hover:scale-110 active:scale-95 transition-all">
                                             <Upload size={14} />
                                             <input type="file" className="hidden" accept="image/*" onChange={e => handlePhotoUpload(e, 'leader')} />
@@ -541,7 +579,7 @@ const UnitDetails: React.FC<UnitDetailsProps> = ({ unit, onBack, onUpdate, isAdm
                                             (localAssistant.name || 'A').charAt(0)
                                         )}
                                     </div>
-                                    {isEditing && (
+                                    {isAdmin && isEditing && (
                                         <label className="absolute -bottom-2 -right-2 p-2 bg-emerald-600 text-white rounded-xl cursor-pointer shadow-xl hover:scale-110 active:scale-95 transition-all">
                                             <Upload size={14} />
                                             <input type="file" className="hidden" accept="image/*" onChange={e => handlePhotoUpload(e, 'assistant')} />
@@ -618,10 +656,20 @@ const UnitDetails: React.FC<UnitDetailsProps> = ({ unit, onBack, onUpdate, isAdm
                                     }}
                                 />
                                 <button
-                                    onClick={() => isEditing ? addItem('MEMBER') : setIsMemberModalOpen(true)}
-                                    className="px-8 py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl hover:bg-indigo-700 active:scale-95 transition-all text-sm"
+                                    onClick={() => {
+                                        if (!authService.isAdmin()) {
+                                            setAdminAccessDeniedMessage('L\'ajout de nouveaux membres est réservé à l\'administrateur.');
+                                            return;
+                                        }
+                                        if (isEditing) addItem('MEMBER');
+                                        else setIsMemberModalOpen(true);
+                                    }}
+                                    className={`px-8 py-4 rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl active:scale-95 transition-all text-sm flex items-center gap-2 ${authService.isAdmin() ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-slate-100 text-slate-400 cursor-not-allowed opacity-60'}`}
+                                    disabled={!authService.isAdmin()}
+                                    title={authService.isAdmin() ? 'Ajouter un nouveau membre' : 'Accès réservé à l\'administrateur'}
                                 >
-                                    <UserPlus size={20} className="inline mr-2" /> AJOUTER UN MEMBRE
+                                    {!authService.isAdmin() && <Lock size={16} />}
+                                    <UserPlus size={20} /> AJOUTER UN MEMBRE
                                 </button>
                             </div>
                         </div>
@@ -635,13 +683,20 @@ const UnitDetails: React.FC<UnitDetailsProps> = ({ unit, onBack, onUpdate, isAdm
                                         </div>
                                         <div className="flex gap-2">
                                             <button
-                                                onClick={() => openMemberModal(m)}
-                                                className="w-8 h-8 flex items-center justify-center rounded-lg bg-indigo-50 text-indigo-400 hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
-                                                title="Modifier"
+                                                onClick={() => {
+                                                    if (!authService.isAdmin()) {
+                                                        setAdminAccessDeniedMessage('L\'édition des membres est réservée à l\'administrateur.');
+                                                        return;
+                                                    }
+                                                    openMemberModal(m);
+                                                }}
+                                                className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all shadow-sm ${authService.isAdmin() ? 'bg-indigo-50 text-indigo-400 hover:bg-indigo-600 hover:text-white' : 'bg-slate-50 text-slate-300 cursor-not-allowed opacity-50'}`}
+                                                title={authService.isAdmin() ? 'Modifier' : 'Accès réservé à l\'administrateur'}
+                                                disabled={!authService.isAdmin()}
                                             >
-                                                <Edit3 size={14} />
+                                                {!authService.isAdmin() ? <Lock size={14} /> : <Edit3 size={14} />}
                                             </button>
-                                            {isEditing && (
+                                            {isAdmin && isEditing && (
                                                 <button
                                                     onClick={() => removeItem('MEMBER', m.id)}
                                                     className="w-8 h-8 flex items-center justify-center rounded-lg bg-rose-50 text-rose-300 hover:bg-rose-500 hover:text-white transition-all shadow-sm"
@@ -709,8 +764,8 @@ const UnitDetails: React.FC<UnitDetailsProps> = ({ unit, onBack, onUpdate, isAdm
                                         </div>
                                     )}
                                 </div>
-                                {isEditing && (
-                                    <button onClick={() => addItem('SOUL')} className="px-8 py-4 bg-pink-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl">
+                                {(
+                                    <button onClick={() => protectedAddItem('SOUL')} className="px-8 py-4 bg-pink-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl hover:bg-pink-700 active:scale-95 transition-all">
                                         <UserPlus size={20} className="inline mr-2" /> NOUVELLE ÂME
                                     </button>
                                 )}
@@ -728,7 +783,7 @@ const UnitDetails: React.FC<UnitDetailsProps> = ({ unit, onBack, onUpdate, isAdm
                                                 <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Conversion : {s.decisionDate}</div>
                                             </div>
                                         </div>
-                                        {isEditing && <button onClick={() => removeItem('SOUL', s.id)} className="text-slate-300 hover:text-red-500 transition-colors"><Trash2 size={18} /></button>}
+                                        {isAdmin && isEditing && <button onClick={() => removeItem('SOUL', s.id)} className="text-slate-300 hover:text-red-500 transition-colors"><Trash2 size={18} /></button>}
                                     </div>
 
                                     <div className="space-y-4">
@@ -741,7 +796,7 @@ const UnitDetails: React.FC<UnitDetailsProps> = ({ unit, onBack, onUpdate, isAdm
                                         <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
                                             <div className="flex items-center justify-between mb-3">
                                                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Journal de Bord</span>
-                                                <button onClick={() => addSoulFollowUp(s.id)} className="text-pink-600 hover:text-pink-700 transition-colors"><Plus size={16} /></button>
+                                                <button onClick={() => protectedAddSoulFollowUp(s.id)} className="text-pink-600 hover:text-pink-700 transition-colors"><Plus size={16} /></button>
                                             </div>
                                             <div className="space-y-2 max-h-32 overflow-y-auto custom-scrollbar pr-2">
                                                 {(s.followUpLogs || []).map(log => (
@@ -794,8 +849,8 @@ const UnitDetails: React.FC<UnitDetailsProps> = ({ unit, onBack, onUpdate, isAdm
                                         </div>
                                     )}
                                 </div>
-                                {isEditing && (
-                                    <button onClick={() => addItem('SOCIAL')} className="px-8 py-4 bg-rose-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl">
+                                {(
+                                    <button onClick={() => protectedAddItem('SOCIAL')} className="px-8 py-4 bg-rose-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl hover:bg-rose-700 active:scale-95 transition-all">
                                         <Plus size={20} className="inline mr-2" /> NOUVELLE FICHE
                                     </button>
                                 )}
@@ -815,7 +870,7 @@ const UnitDetails: React.FC<UnitDetailsProps> = ({ unit, onBack, onUpdate, isAdm
                                                 ) : <span className="font-black uppercase text-sm text-slate-800">{SOCIAL_EVENT_TYPES[action.eventType]?.label}</span>}
                                             </div>
                                         </div>
-                                        {isEditing && <button onClick={() => removeItem('SOCIAL', action.id)} className="text-slate-200 hover:text-red-500"><Trash2 size={20} /></button>}
+                                        {isAdmin && isEditing && <button onClick={() => removeItem('SOCIAL', action.id)} className="text-slate-200 hover:text-red-500"><Trash2 size={20} /></button>}
                                     </div>
                                     <div className="space-y-4">
                                         <div className="flex flex-col gap-1">
@@ -896,8 +951,8 @@ const UnitDetails: React.FC<UnitDetailsProps> = ({ unit, onBack, onUpdate, isAdm
                                         </div>
                                     )}
                                 </div>
-                                {isEditing && (
-                                    <button onClick={() => addItem(financeTab === 'JOURNAL' ? 'TREASURY' : 'CONTRIBUTION')} className="w-16 h-16 bg-indigo-600 text-white rounded-2xl flex items-center justify-center shadow-xl"><Plus size={32} /></button>
+                                {(
+                                    <button onClick={() => protectedAddItem(financeTab === 'JOURNAL' ? 'TREASURY' : 'CONTRIBUTION')} className="w-16 h-16 bg-indigo-600 text-white rounded-2xl flex items-center justify-center shadow-xl hover:bg-indigo-700 active:scale-95 transition-all"><Plus size={32} /></button>
                                 )}
                             </div>
                         </div>
@@ -930,7 +985,7 @@ const UnitDetails: React.FC<UnitDetailsProps> = ({ unit, onBack, onUpdate, isAdm
                                             <th className="px-8 py-6">Montant Réel</th>
                                             <th className="px-8 py-6">Encaissé</th>
                                             <th className="px-8 py-6">Dépenses</th>
-                                            {isEditing && <th className="px-4 py-6"></th>}
+                                            {isAdmin && isEditing && <th className="px-4 py-6"></th>}
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100 text-center">
@@ -943,7 +998,7 @@ const UnitDetails: React.FC<UnitDetailsProps> = ({ unit, onBack, onUpdate, isAdm
                                                 <td className="px-8 py-5 text-xs font-black text-indigo-400">{isEditing ? <input value={t.realise} type="number" onChange={e => setLocalTreasury(prev => prev.map(i => i.id === t.id ? { ...i, realise: e.target.value } : i))} className="w-20 bg-slate-50 p-1 rounded" /> : parseInt(t.realise || '0').toLocaleString()}</td>
                                                 <td className="px-8 py-5 text-sm font-black text-slate-900 whitespace-nowrap">{isEditing ? <input value={t.encaisse} type="number" onChange={e => setLocalTreasury(prev => prev.map(i => i.id === t.id ? { ...i, encaisse: e.target.value } : i))} className="w-24 bg-slate-900 text-emerald-400 p-2 rounded-xl text-center font-black" /> : <span className="text-emerald-600">+{parseInt(t.encaisse || '0').toLocaleString()}</span>}</td>
                                                 <td className="px-8 py-5 text-sm font-black text-slate-900 whitespace-nowrap">{isEditing ? <input value={t.expenses || '0'} type="number" onChange={e => setLocalTreasury(prev => prev.map(i => i.id === t.id ? { ...i, expenses: e.target.value } : i))} className="w-24 bg-rose-50 border-2 border-rose-100 text-rose-600 p-2 rounded-xl text-center font-black" /> : <span className="text-rose-600">-{parseInt(t.expenses || '0').toLocaleString()}</span>}</td>
-                                                {isEditing && <td className="px-4 py-5"><button onClick={() => removeItem('TREASURY', t.id)} className="text-slate-200 hover:text-red-500"><Trash2 size={18} /></button></td>}
+                                                {isAdmin && isEditing && <td className="px-4 py-5"><button onClick={() => removeItem('TREASURY', t.id)} className="text-slate-200 hover:text-red-500"><Trash2 size={18} /></button></td>}
                                             </tr>
                                         ))}
                                     </tbody>
@@ -961,7 +1016,7 @@ const UnitDetails: React.FC<UnitDetailsProps> = ({ unit, onBack, onUpdate, isAdm
                                             <th className="px-8 py-6">Montant (FCFA)</th>
                                             <th className="px-8 py-6">Statut</th>
                                             <th className="px-8 py-6">Observations</th>
-                                            {isEditing && <th className="px-4 py-6"></th>}
+                                            {isAdmin && isEditing && <th className="px-4 py-6"></th>}
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100 text-center">
@@ -1051,7 +1106,7 @@ const UnitDetails: React.FC<UnitDetailsProps> = ({ unit, onBack, onUpdate, isAdm
                                                         />
                                                     ) : <span className="text-[10px] text-slate-400 italic">"{c.observation || '—'}"</span>}
                                                 </td>
-                                                {isEditing && (
+                                                {isAdmin && isEditing && (
                                                     <td className="px-4 py-5">
                                                         <button onClick={() => removeItem('CONTRIBUTION', c.id)} className="text-slate-200 hover:text-red-500 transition-colors">
                                                             <Trash2 size={18} />
@@ -1131,7 +1186,7 @@ const UnitDetails: React.FC<UnitDetailsProps> = ({ unit, onBack, onUpdate, isAdm
                                     </div>
                                 </div>
 
-                                {isEditing && <button onClick={() => addItem('PROG')} className="w-16 h-16 bg-indigo-600 text-white rounded-2xl flex items-center justify-center shadow-xl hover:bg-indigo-700 transition-all active:scale-95"><Plus size={32} /></button>}
+                                {<button onClick={() => protectedAddItem('PROG')} className="w-16 h-16 bg-indigo-600 text-white rounded-2xl flex items-center justify-center shadow-xl hover:bg-indigo-700 transition-all active:scale-95"><Plus size={32} /></button>}
                             </div>
                         </div>
                         <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden overflow-x-auto">
@@ -1147,7 +1202,7 @@ const UnitDetails: React.FC<UnitDetailsProps> = ({ unit, onBack, onUpdate, isAdm
                                         <th className="px-6 py-5">Chargé de l'activité</th>
                                         <th className="px-6 py-5">Contact</th>
                                         <th className="px-4 py-5">Action</th>
-                                        {isEditing && <th className="px-4 py-5"></th>}
+                                        {isAdmin && isEditing && <th className="px-4 py-5"></th>}
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 text-center">
@@ -1189,7 +1244,7 @@ const UnitDetails: React.FC<UnitDetailsProps> = ({ unit, onBack, onUpdate, isAdm
                                                     </button>
                                                 </div>
                                             </td>
-                                            {isEditing && <td className="px-4 py-4"><button onClick={() => removeItem('PROG', p.id)} className="text-slate-200 hover:text-red-500"><Trash2 size={18} /></button></td>}
+                                            {isAdmin && isEditing && <td className="px-4 py-4"><button onClick={() => removeItem('PROG', p.id)} className="text-slate-200 hover:text-red-500"><Trash2 size={18} /></button></td>}
                                         </tr>
                                     ))}
                                 </tbody>
@@ -1233,8 +1288,8 @@ const UnitDetails: React.FC<UnitDetailsProps> = ({ unit, onBack, onUpdate, isAdm
                                         </div>
                                     )}
                                 </div>
-                                {isEditing && (
-                                    <button onClick={() => addItem('OFFICE')} className="w-16 h-16 bg-slate-900 text-white rounded-2xl flex items-center justify-center shadow-xl hover:bg-slate-800 transition-all active:scale-95 border-b-4 border-indigo-500">
+                                {(
+                                    <button onClick={() => protectedAddItem('OFFICE')} className="w-16 h-16 bg-slate-900 text-white rounded-2xl flex items-center justify-center shadow-xl hover:bg-slate-800 transition-all active:scale-95 border-b-4 border-indigo-500">
                                         <Plus size={32} />
                                     </button>
                                 )}
@@ -1250,7 +1305,7 @@ const UnitDetails: React.FC<UnitDetailsProps> = ({ unit, onBack, onUpdate, isAdm
                                                 <div className="w-16 h-16 bg-slate-950 text-indigo-400 rounded-2xl flex items-center justify-center font-black text-2xl uppercase shadow-lg ring-4 ring-indigo-50 overflow-hidden shrink-0">
                                                     {o.photo ? <img src={o.photo} alt={o.name} className="w-full h-full object-cover" /> : (o.name || 'B').charAt(0)}
                                                 </div>
-                                                {isEditing && (
+                                                {isAdmin && isEditing && (
                                                     <label className="absolute -bottom-2 -right-2 p-1.5 bg-indigo-600 text-white rounded-lg cursor-pointer shadow-xl hover:scale-110 active:scale-95 transition-all">
                                                         <Upload size={12} />
                                                         <input type="file" className="hidden" accept="image/*" onChange={e => handlePhotoUpload(e, 'office', o.id)} />
@@ -1265,7 +1320,7 @@ const UnitDetails: React.FC<UnitDetailsProps> = ({ unit, onBack, onUpdate, isAdm
                                                         className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl p-2 text-[10px] font-black uppercase outline-none focus:border-indigo-300 transition-all"
                                                         placeholder="Poste / Position..."
                                                     />
-                                                ) : <div className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-600 mb-1">{o.position}</div>}
+                                                ) : <div className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-600 mb-1 truncate">{o.position}</div>}
                                                 {isEditing ? (
                                                     <input
                                                         value={o.name}
@@ -1273,10 +1328,10 @@ const UnitDetails: React.FC<UnitDetailsProps> = ({ unit, onBack, onUpdate, isAdm
                                                         className="w-full mt-1 bg-white border-2 border-indigo-100 rounded-xl p-2 text-sm font-black uppercase outline-none focus:border-indigo-500 transition-all"
                                                         placeholder="Nom complet..."
                                                     />
-                                                ) : <h4 className="text-lg font-black uppercase text-slate-800 truncate">{o.name}</h4>}
+                                                ) : <h4 className="text-sm font-black uppercase text-slate-800 line-clamp-2 leading-tight">{o.name}</h4>}
                                             </div>
                                         </div>
-                                        {isEditing && <button onClick={() => removeItem('OFFICE', o.id)} className="text-slate-200 hover:text-red-500 transition-colors"><Trash2 size={18} /></button>}
+                                        {isAdmin && isEditing && <button onClick={() => removeItem('OFFICE', o.id)} className="text-slate-200 hover:text-red-500 transition-colors"><Trash2 size={18} /></button>}
                                     </div>
 
                                     <div className="grid grid-cols-1 gap-4 pt-6 border-t border-slate-50">
@@ -1369,7 +1424,7 @@ const UnitDetails: React.FC<UnitDetailsProps> = ({ unit, onBack, onUpdate, isAdm
                                         </div>
                                     )}
                                 </div>
-                                {isEditing && <button onClick={() => addItem(reportType === 'MISSION' ? 'REPORT' : 'ACTIVITY_GRID')} className={`w-16 h-16 ${reportType === 'MISSION' ? 'bg-emerald-600' : 'bg-indigo-600'} text-white rounded-2xl flex items-center justify-center shadow-xl transition-all`}><Plus size={32} /></button>}
+                                {<button onClick={() => protectedAddItem(reportType === 'MISSION' ? 'REPORT' : 'ACTIVITY_GRID')} className={`w-16 h-16 ${reportType === 'MISSION' ? 'bg-emerald-600' : 'bg-indigo-600'} text-white rounded-2xl flex items-center justify-center shadow-xl hover:shadow-lg transition-all active:scale-95`}><Plus size={32} /></button>}
                             </div>
                         </div>
 
@@ -1388,7 +1443,7 @@ const UnitDetails: React.FC<UnitDetailsProps> = ({ unit, onBack, onUpdate, isAdm
                                             <th rowSpan={2} className="px-4 py-5 border-r border-white/20 uppercase">PRÉSENTS</th>
                                             <th rowSpan={2} className="px-4 py-5 border-r border-white/20 uppercase leading-tight">TX PART. MEMBRES<br />(%)</th>
                                             <th rowSpan={2} className="px-4 py-5 uppercase leading-tight">OBSERVATIONS & ÉCART</th>
-                                            {isEditing && <th rowSpan={2} className="px-4 py-5"></th>}
+                                            {isAdmin && isEditing && <th rowSpan={2} className="px-4 py-5"></th>}
                                         </tr>
                                         <tr className="bg-[#8da9d4] text-white text-[9px] font-black uppercase tracking-widest text-center">
                                             <th className="px-4 py-3 border-r border-white/20">PROJETÉES</th>
@@ -1487,7 +1542,7 @@ const UnitDetails: React.FC<UnitDetailsProps> = ({ unit, onBack, onUpdate, isAdm
                                                             )}
                                                         </div>
                                                     </td>
-                                                    {isEditing && <td className="px-4 py-4"><button onClick={() => removeItem('REPORT', r.id)} className="text-slate-200 hover:text-red-500"><Trash2 size={18} /></button></td>}
+                                                    {isAdmin && isEditing && <td className="px-4 py-4"><button onClick={() => removeItem('REPORT', r.id)} className="text-slate-200 hover:text-red-500"><Trash2 size={18} /></button></td>}
                                                 </tr>
                                             );
                                         })}
@@ -1582,7 +1637,7 @@ const UnitDetails: React.FC<UnitDetailsProps> = ({ unit, onBack, onUpdate, isAdm
                                                     );
                                                 })()}
                                             </td>
-                                            {isEditing && <td></td>}
+                                            {isAdmin && isEditing && <td></td>}
                                         </tr>
                                     </tbody>
                                 </table>
@@ -1708,7 +1763,7 @@ const UnitDetails: React.FC<UnitDetailsProps> = ({ unit, onBack, onUpdate, isAdm
                                                     </th>
                                                     <th colSpan={2} className="px-5 py-4 border border-slate-900">RESSOURCES</th>
                                                     <th rowSpan={2} className="px-5 py-6 border border-slate-900">OBSERVATIONS</th>
-                                                    {isEditing && <th rowSpan={2} className="px-5 py-6 border border-slate-900"></th>}
+                                                    {isAdmin && isEditing && <th rowSpan={2} className="px-5 py-6 border border-slate-900"></th>}
                                                 </tr>
                                                 <tr className="bg-white text-slate-900 text-[9px] font-black uppercase tracking-widest text-center">
                                                     <th className="px-5 py-3 border border-slate-900 text-red-600 normal-case font-bold">HUMAINES<br />(Nombre de participants à l'activité)</th>
@@ -1745,7 +1800,7 @@ const UnitDetails: React.FC<UnitDetailsProps> = ({ unit, onBack, onUpdate, isAdm
                                                         <td className="px-4 py-5 text-left italic text-slate-400 min-w-[300px] border-r border-slate-100">
                                                             {isEditing ? <RichTextEditor value={r.observations} onChange={content => setLocalActivityReports(prev => prev.map(i => i.id === r.id ? { ...i, observations: content } : i))} /> : <div className="quill-content" dangerouslySetInnerHTML={{ __html: r.observations }} />}
                                                         </td>
-                                                        {isEditing && <td className="px-4 py-5 border-r border-slate-100"><button onClick={() => removeItem('ACTIVITY_GRID', r.id)} className="text-slate-300 hover:text-red-500 transition-colors"><Trash2 size={18} /></button></td>}
+                                                        {isAdmin && isEditing && <td className="px-4 py-5 border-r border-slate-100"><button onClick={() => removeItem('ACTIVITY_GRID', r.id)} className="text-slate-300 hover:text-red-500 transition-colors"><Trash2 size={18} /></button></td>}
                                                     </tr>
                                                 ))}
                                             </tbody>
@@ -1915,6 +1970,51 @@ const UnitDetails: React.FC<UnitDetailsProps> = ({ unit, onBack, onUpdate, isAdm
                     initialData={editingMember}
                     title={`Nouveau Membre - ${unit.name}`}
                 />
+
+                {/* Edit Authentication Modal */}
+                <EditAuthModal
+                    isOpen={isAuthModalOpen}
+                    onClose={() => setIsAuthModalOpen(false)}
+                    onAuthenticate={(success) => {
+                        if (success) {
+                            setIsAuthModalOpen(false);
+                            setIsSessionAuthenticated(true);
+                            setIsEditing(true);
+                        }
+                    }}
+                    unitName={unit.name}
+                />
+
+                {/* Admin Access Denied Modal */}
+                {adminAccessDeniedMessage && (
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-in fade-in">
+                        <div className="bg-white rounded-[2.5rem] shadow-2xl border border-slate-100 p-8 max-w-md w-full mx-4 animate-in scale-in-95 duration-300">
+                            <div className="flex items-center gap-4 mb-6">
+                                <div className="w-12 h-12 bg-rose-50 rounded-xl flex items-center justify-center text-rose-600">
+                                    <Lock size={24} />
+                                </div>
+                                <h3 className="text-xl font-black uppercase tracking-tight text-slate-900">Accès Administrateur</h3>
+                            </div>
+                            <p className="text-slate-600 font-medium mb-8 text-sm leading-relaxed">
+                                {adminAccessDeniedMessage}
+                            </p>
+                            <div className="space-y-3">
+                                <button
+                                    onClick={() => setIsAuthModalOpen(true)}
+                                    className="w-full px-6 py-3 bg-indigo-600 text-white rounded-xl font-black uppercase text-xs tracking-widest hover:bg-indigo-700 hover:shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2"
+                                >
+                                    <Lock size={16} /> Se Connecter Admin
+                                </button>
+                                <button
+                                    onClick={() => setAdminAccessDeniedMessage(null)}
+                                    className="w-full px-6 py-3 bg-slate-100 text-slate-700 rounded-xl font-black uppercase text-xs tracking-widest hover:bg-slate-200 transition-all active:scale-95"
+                                >
+                                    Fermer
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

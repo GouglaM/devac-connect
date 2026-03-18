@@ -31,7 +31,6 @@ const AnnouncementBoard: React.FC<AnnouncementBoardProps> = ({ announcements, un
 
   const [shareOpenId, setShareOpenId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   const [isAdding, setIsAdding] = useState(false);
   const [showCreativeStudio, setShowCreativeStudio] = useState(false);
@@ -39,6 +38,8 @@ const AnnouncementBoard: React.FC<AnnouncementBoardProps> = ({ announcements, un
   const [newContent, setNewContent] = useState('');
   const [newPriority, setNewPriority] = useState<'normal' | 'high'>('normal');
   const [newImage, setNewImage] = useState<string | null>(null);
+  const [pendingImage, setPendingImage] = useState<string | null>(null);
+  const [showCropModal, setShowCropModal] = useState(false);
 
 
   // États pour l'analyse IA
@@ -98,6 +99,39 @@ const AnnouncementBoard: React.FC<AnnouncementBoardProps> = ({ announcements, un
     }
   };
 
+  const cropImageToAspectRatio = async (dataUrl: string, aspect = 16 / 9): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const srcW = img.naturalWidth;
+        const srcH = img.naturalHeight;
+        const srcAspect = srcW / srcH;
+
+        let cropW = srcW;
+        let cropH = srcH;
+        if (srcAspect > aspect) {
+          cropW = srcH * aspect;
+        } else {
+          cropH = srcW / aspect;
+        }
+
+        const sx = (srcW - cropW) / 2;
+        const sy = (srcH - cropH) / 2;
+
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(cropW);
+        canvas.height = Math.round(cropH);
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          return resolve(dataUrl);
+        }
+        ctx.drawImage(img, sx, sy, cropW, cropH, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', 0.9));
+      };
+      img.src = dataUrl;
+    });
+  };
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -106,7 +140,11 @@ const AnnouncementBoard: React.FC<AnnouncementBoardProps> = ({ announcements, un
         return;
       }
       const reader = new FileReader();
-      reader.onloadend = () => setNewImage(reader.result as string);
+      reader.onloadend = () => {
+        const data = reader.result as string;
+        setPendingImage(data);
+        setShowCropModal(true);
+      };
       reader.readAsDataURL(file);
     }
   };
@@ -167,7 +205,7 @@ const AnnouncementBoard: React.FC<AnnouncementBoardProps> = ({ announcements, un
     };
 
     onAdd(announcement);
-    setNewTitle(''); setNewContent(''); setNewPriority('normal'); setNewImage(null); setIsAdding(false); setShowCreativeStudio(false);
+    setNewTitle(''); setNewContent(''); setNewPriority('normal'); setNewImage(null); setPendingImage(null); setShowCropModal(false); setIsAdding(false); setShowCreativeStudio(false);
   };
 
   const handlePublishGraphic = (imageData: string) => {
@@ -253,6 +291,57 @@ const AnnouncementBoard: React.FC<AnnouncementBoardProps> = ({ announcements, un
               >
                 <HeartHandshake size={20} /> Valider & Créer la Fiche
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL RECADRAGE D'IMAGE */}
+      {showCropModal && pendingImage && (
+        <div className="fixed inset-0 z-[100] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-6 animate-in fade-in">
+          <div className="bg-white w-full max-w-xl rounded-[3rem] shadow-2xl overflow-hidden animate-in zoom-in-95">
+            <div className="bg-indigo-600 p-6 text-white flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-black uppercase tracking-tighter">Recadrage d’image</h3>
+                <p className="text-indigo-200 text-[10px] font-black uppercase tracking-widest">Choisir comment afficher l’image dans l’annonce</p>
+              </div>
+              <button onClick={() => { setShowCropModal(false); setPendingImage(null); }} className="p-2 hover:bg-white/10 rounded-full"><X size={20} /></button>
+            </div>
+            <div className="p-6 space-y-6">
+              <div className="rounded-2xl overflow-hidden border border-slate-100 shadow-sm">
+                <div className="relative w-full aspect-[16/9] bg-slate-50">
+                  <img src={pendingImage} alt="Prévisualisation" className="absolute inset-0 w-full h-full object-contain" />
+                </div>
+              </div>
+
+              <div className="text-sm text-slate-500">
+                <p className="font-bold">Conseil :</p>
+                <p>L’option “Recadrer” coupera automatiquement l’image au ratio 16:9 (centre), pour un rendu constant dans le tableau d’actualités.</p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={async () => {
+                    const cropped = await cropImageToAspectRatio(pendingImage, 16 / 9);
+                    setNewImage(cropped);
+                    setPendingImage(null);
+                    setShowCropModal(false);
+                  }}
+                  className="flex-1 bg-indigo-600 text-white py-3 rounded-xl font-black uppercase text-xs tracking-widest shadow-lg hover:bg-indigo-700 transition-all"
+                >
+                  Recadrer (16:9)
+                </button>
+                <button
+                  onClick={() => {
+                    setNewImage(pendingImage);
+                    setPendingImage(null);
+                    setShowCropModal(false);
+                  }}
+                  className="flex-1 bg-slate-100 text-slate-800 py-3 rounded-xl font-black uppercase text-xs tracking-widest border border-slate-200 hover:bg-slate-200 transition-all"
+                >
+                  Utiliser telle quelle
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -435,10 +524,16 @@ const AnnouncementBoard: React.FC<AnnouncementBoardProps> = ({ announcements, un
                 </div>
               </div>
 
-              {/* IMAGE: Full Width */}
+              {/* IMAGE: Encadrée et centrée */}
               {announcement.image && (
-                <div className="w-full h-48 sm:h-64 md:h-80 rounded-2xl overflow-hidden shadow-md">
-                  <img src={announcement.image} alt={announcement.title} className="w-full h-full object-cover object-center" />
+                <div className="w-full rounded-2xl overflow-hidden shadow-md">
+                  <div className="relative w-full aspect-[16/9] bg-slate-100">
+                    <img
+                      src={announcement.image}
+                      alt={announcement.title}
+                      className="absolute inset-0 w-full h-full object-contain object-center"
+                    />
+                  </div>
                 </div>
               )}
 

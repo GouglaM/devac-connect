@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { BIBLICAL_VERSES, PRAYER_TOPICS } from './constants';
+import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BIBLICAL_VERSES, PRAYER_TOPICS, ADMIN_PASSWORD } from './constants';
 import { Announcement, EvangelismUnit, Committee, AttendanceSession, Member, UnitFile, CampaignRegistration, CampaignComiteMember, CampaignGroup, CampaignContribution, CampaignDonation, CampaignExpense } from './types';
 import {
   subscribeToAnnouncements, subscribeToUnits, subscribeToCommittees, subscribeToAttendance,
@@ -16,31 +17,37 @@ import {
   subscribeToCampaignExpenses, saveCampaignExpenseToDB, deleteCampaignExpense
 } from './services/dataService';
 import { generateDevotionalPodcast } from './services/geminiService';
+import { authService } from './services/authService';
 
 import Clock from './components/ui/Clock';
 import VerseTicker from './components/ui/VerseTicker';
 import PrayerFocus from './components/ui/PrayerFocus';
+import Header from './components/ui/Header';
 import AnnouncementBoard from './components/community/AnnouncementBoard';
 import BibleAssistant from './components/ai/BibleAssistant';
+import Home from './components/Home';
 import AdminPanel from './admin/AdminPanel';
+import AdminLogin from './admin/AdminLogin';
 import VoicePlayer from './components/ai/VoicePlayer';
 import CommunityChat from './components/community/CommunityChat';
 import AttendanceManager from './components/units/AttendanceManager';
 import UnitDetails from './components/units/UnitDetails';
+import UnitsManagementHub from './components/units/UnitsManagementHub';
 import DocumentLibrary from './components/documents/DocumentLibrary';
 import SoulFollowUp from './components/members/SoulFollowUp';
 import CampaignDashboard from './components/campaign/CampaignDashboard';
 
 import {
-  LayoutGrid, Users, ShieldCheck, Database, RefreshCcw, ArrowRight
+  LayoutGrid, Users, ShieldCheck, Database, ArrowRight, Megaphone, CheckSquare, Heart, Lock, AlertCircle
 } from 'lucide-react';
 
 // Initialisation immédiate du stockage
 initializeData();
 
-const App: React.FC = () => {
+const MainApp: React.FC<{ isAdmin: boolean; currentLogo: string | null; onUpdateLogo: (logo: string | null) => void }> = ({ isAdmin, currentLogo, onUpdateLogo }) => {
   const [verseIndex, setVerseIndex] = useState(0);
   const [prayerIndex, setPrayerIndex] = useState(0);
+  const [showAdminRestrictedMessage, setShowAdminRestrictedMessage] = useState(false);
 
   const [announcements, setAnnouncements] = useState<Announcement[]>(getInitialAnnouncements);
   const [units, setUnits] = useState<EvangelismUnit[]>(getInitialUnits);
@@ -54,16 +61,11 @@ const App: React.FC = () => {
   const [campaignDonations, setCampaignDonations] = useState<CampaignDonation[]>([]);
   const [campaignExpenses, setCampaignExpenses] = useState<CampaignExpense[]>([]);
 
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [currentView, setCurrentView] = useState<'HOME' | 'UNITS' | 'ATTENDANCE' | 'ACTU' | 'CHAT' | 'DOCS' | 'SOULS' | 'CAMPAIGN'>('HOME');
+  const [currentView, setCurrentView] = useState<'HOME' | 'UNITS' | 'ATTENDANCE' | 'ACTU' | 'CHAT' | 'DOCS' | 'SOULS' | 'CAMPAIGN' | 'ADMIN_UNITS'>('HOME');
   const [selectedGroup, setSelectedGroup] = useState<EvangelismUnit | Committee | null>(null);
   const [podcastAudio, setPodcastAudio] = useState<AudioBuffer | null>(null);
   const [isGeneratingPodcast, setIsGeneratingPodcast] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
-
-  const [currentLogo, setCurrentLogo] = useState<string | null>(() => {
-    return localStorage.getItem('devac_logo');
-  });
 
   useEffect(() => {
     const unsubA = subscribeToAnnouncements(setAnnouncements);
@@ -106,15 +108,6 @@ const App: React.FC = () => {
     }, 600);
   };
 
-  const handleUpdateLogo = (logo: string | null) => {
-    setCurrentLogo(logo);
-    if (logo) {
-      localStorage.setItem('devac_logo', logo);
-    } else {
-      localStorage.removeItem('devac_logo');
-    }
-  };
-
   const handleGeneratePodcast = async (topic: string) => {
     setIsGeneratingPodcast(true);
     try {
@@ -155,40 +148,21 @@ const App: React.FC = () => {
     switch (currentView) {
       case 'HOME':
         return (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 p-4 animate-in fade-in duration-500 xl:max-w-[1600px] mx-auto">
-            <div className="lg:col-span-5 space-y-6">
-              <PrayerFocus currentIndex={prayerIndex} onGeneratePodcast={handleGeneratePodcast} />
-              <BibleAssistant
-                announcements={announcements}
-                units={units}
-                committees={committees}
-                attendanceHistory={attendanceHistory}
-                currentVerse={BIBLICAL_VERSES[verseIndex]}
-                currentPrayer={PRAYER_TOPICS[prayerIndex]}
-                onSetPodcastAudio={setPodcastAudio}
-              />
-            </div>
-            <div className="lg:col-span-4">
-              <AnnouncementBoard
-                announcements={announcements}
-                units={units}
-                committees={committees}
-                isAdmin={isAdmin}
-                onDelete={deleteAnnouncementFromDB}
-                onAdd={addAnnouncementToDB}
-                onRefresh={handleRefreshData}
-              />
-            </div>
-            <div className="lg:col-span-3 space-y-4">
-              <AdminPanel
-                onAddAnnouncement={(ann) => addAnnouncementToDB(ann)}
-                isAdmin={isAdmin}
-                setIsAdmin={setIsAdmin}
-                onUpdateLogo={handleUpdateLogo}
-                currentLogo={currentLogo}
-              />
-            </div>
-          </div>
+          <Home
+            announcements={announcements}
+            units={units}
+            committees={committees}
+            attendanceHistory={attendanceHistory}
+            onNavigate={setCurrentView}
+            onRefresh={handleRefreshData}
+            isAdmin={isAdmin}
+            currentVerse={BIBLICAL_VERSES[verseIndex]}
+            currentPrayer={PRAYER_TOPICS[prayerIndex]}
+            verseIndex={verseIndex}
+            onGeneratePodcast={handleGeneratePodcast}
+            onDelete={deleteAnnouncementFromDB}
+            onAdd={addAnnouncementToDB}
+          />
         );
       case 'UNITS':
         return (
@@ -343,42 +317,63 @@ const App: React.FC = () => {
             isAdmin={isAdmin}
           />
         );
+      case 'ADMIN_UNITS':
+        if (!isAdmin) {
+          return (
+            <div className="min-h-[60vh] flex items-center justify-center p-4 animate-in fade-in">
+              <div className="bg-white rounded-[2.5rem] shadow-2xl border border-slate-100 p-10 max-w-md w-full text-center">
+                <div className="flex justify-center mb-6">
+                  <div className="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600">
+                    <Lock size={32} />
+                  </div>
+                </div>
+                <h2 className="text-2xl font-black uppercase tracking-tight text-slate-900 mb-4">
+                  Gestion des Unités
+                </h2>
+                <p className="text-slate-600 font-medium mb-8 leading-relaxed">
+                  Cette section est réservée aux administrateurs de DEVAC Connect. Veuillez vous authentifier pour y accéder.
+                </p>
+                <div className="space-y-3">
+                  <a
+                    href="#/administrateur"
+                    className="w-full px-6 py-3 bg-indigo-600 text-white rounded-xl font-black uppercase text-xs tracking-widest hover:bg-indigo-700 hover:shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 shadow-lg inline-block"
+                  >
+                    <Lock size={16} /> Se Connecter Admin
+                  </a>
+                </div>
+                <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-6">
+                  Mot de passe administrateur requis
+                </p>
+              </div>
+            </div>
+          );
+        }
+        return (
+          <UnitsManagementHub
+            units={units}
+            committees={committees}
+            onUpdateUnit={updateUnitInDB}
+            onUpdateCommittee={updateCommitteeInDB}
+            isAdmin={isAdmin}
+          />
+        );
       default: return null;
     }
   };
 
   return (
     <div className="min-h-screen bg-slate-50 pb-28">
-      <header className="bg-[#0f172a] text-white py-3 px-8 sticky top-0 z-50 flex flex-col md:flex-row justify-between items-center shadow-2xl">
-        <div className="flex items-center gap-4 mb-4 md:mb-0">
-          <div className="w-12 h-12 rounded-full border-2 border-indigo-500/30 shadow-xl overflow-hidden bg-slate-800 flex items-center justify-center">
-            <img src={currentLogo || "https://images.unsplash.com/photo-1635326445353-888915467417?q=80&w=200&auto=format&fit=crop"} alt="Logo" className="w-full h-full object-contain" />
-          </div>
-          <h1 className="text-xl font-black tracking-tighter uppercase leading-none">DEVAC <span className="text-indigo-400 font-light">CONNECT</span></h1>
-        </div>
-
-        <nav className="flex gap-1 bg-slate-800/40 p-1.5 rounded-2xl mb-4 md:mb-0 border border-white/5">
-          {[
-            { id: 'HOME', label: 'Accueil' },
-            { id: 'UNITS', label: 'Unités & Comités' },
-            { id: 'ATTENDANCE', label: 'Présences' },
-            { id: 'DOCS', label: 'Archives' },
-            { id: 'SOULS', label: 'Suivi des Âmes' },
-            { id: 'ACTU', label: 'Actu' },
-            { id: 'CAMPAIGN', label: 'TAFIRE 2026' },
-            { id: 'CHAT', label: 'Chat' }
-          ].map(v => (
-            <button key={v.id} onClick={() => { setCurrentView(v.id as any); setSelectedGroup(null); }} className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${currentView === v.id ? 'bg-[#4f46e5] text-white shadow-lg' : 'text-slate-500 hover:text-white hover:bg-slate-700/50'}`}>
-              {v.label}
-            </button>
-          ))}
-        </nav>
-
-        <div className="flex items-center gap-4">
-          <button onClick={handleRefreshData} className={`p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/5 ${isRefreshing ? 'animate-spin text-indigo-400' : 'text-slate-400'}`}><RefreshCcw size={18} /></button>
-          <Clock />
-        </div>
-      </header>
+      <Header
+        currentView={currentView}
+        onViewChange={(view) => {
+          setCurrentView(view);
+          setSelectedGroup(null);
+        }}
+        onRefresh={handleRefreshData}
+        isRefreshing={isRefreshing}
+        currentLogo={currentLogo}
+        isAdmin={isAdmin}
+      />
 
       <VerseTicker currentIndex={verseIndex} onGeneratePodcast={handleGeneratePodcast} />
 
@@ -388,6 +383,73 @@ const App: React.FC = () => {
 
       <VoicePlayer podcastAudio={podcastAudio} onClearPodcast={() => setPodcastAudio(null)} currentVerse={BIBLICAL_VERSES[verseIndex]} currentPrayer={PRAYER_TOPICS[prayerIndex]} announcements={announcements} />
     </div>
+  );
+};
+
+const App: React.FC = () => {
+  const [isAdmin, setIsAdmin] = useState<boolean>(() => {
+    return localStorage.getItem('devac_admin_auth') === 'true';
+  });
+  const [currentLogo, setCurrentLogo] = useState<string | null>(() => {
+    return localStorage.getItem('devac_logo');
+  });
+  const [adminLoginError, setAdminLoginError] = useState('');
+
+  useEffect(() => {
+    localStorage.setItem('devac_admin_auth', isAdmin.toString());
+  }, [isAdmin]);
+
+  const handleAdminLogin = (password: string) => {
+    try {
+      const success = authService.authenticateWithPassword(password, ADMIN_PASSWORD);
+      if (success) {
+        setIsAdmin(true);
+        setAdminLoginError('');
+        return '';
+      } else {
+        const error = 'Mot de passe incorrect';
+        setAdminLoginError(error);
+        return error;
+      }
+    } catch (err: any) {
+      const error = err.message || 'Erreur d\'authentification';
+      setAdminLoginError(error);
+      return error;
+    }
+  };
+
+  const handleAdminLogout = () => {
+    setIsAdmin(false);
+    authService.logout();
+  };
+
+  const handleUpdateLogo = (logo: string | null) => {
+    setCurrentLogo(logo);
+    if (logo && logo.trim()) {
+      localStorage.setItem('devac_logo', logo);
+    } else {
+      localStorage.removeItem('devac_logo');
+    }
+  };
+
+  return (
+    <Router>
+      <Routes>
+        <Route path="/administrateur" element={
+          isAdmin ? (
+            <AdminPanel
+              onAddAnnouncement={(ann) => addAnnouncementToDB(ann)}
+              onUpdateLogo={handleUpdateLogo}
+              currentLogo={currentLogo}
+              onLogout={handleAdminLogout}
+            />
+          ) : (
+            <AdminLogin onLogin={handleAdminLogin} error={adminLoginError} />
+          )
+        } />
+        <Route path="*" element={<MainApp isAdmin={isAdmin} currentLogo={currentLogo} onUpdateLogo={handleUpdateLogo} />} />
+      </Routes>
+    </Router>
   );
 };
 
